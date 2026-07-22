@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Blood Donors</title>
+  <link rel="stylesheet" href="styles.css">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/logo-32.png">
+<link rel="apple-touch-icon" href="assets/logo-192.png">
+<meta name="theme-color" content="#0e223d">
+<meta name="description" content="My Blood Is Yours - Find blood donors across Lebanon.">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<div class="app-shell">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <div class="topbar-title"><div class="brand-wrap"><img src="assets/logo-64.png" class="brand-logo" alt="My Blood Is Yours Logo"><span>Search Donors | بحث عن متبرع</span></div></div>
+    <div class="back-placeholder"></div>
+  </div>
+
+  <main class="container">
+    <section class="hero-card">
+      <h1 id="townName" class="hero-title"></h1>
+      <p class="hero-subtitle">Choose Blood Type | اختر فئة الدم</p>
+    </section>
+
+    <div class="blood-grid">
+      <button class="btn btn-primary blood-btn" onclick="selectBlood('A+')">A+</button>
+      <button class="btn btn-primary blood-btn" onclick="selectBlood('A-')">A-</button>
+      <button class="btn btn-primary blood-btn" onclick="selectBlood('B+')">B+</button>
+      <button class="btn btn-primary blood-btn" onclick="selectBlood('B-')">B-</button>
+      <button class="btn btn-primary blood-btn" onclick="selectBlood('AB+')">AB+</button>
+      <button class="btn btn-primary blood-btn" onclick="selectBlood('AB-')">AB-</button>
+      <button class="btn btn-primary blood-btn" onclick="selectBlood('O+')">O+</button>
+      <button class="btn btn-primary blood-btn" onclick="selectBlood('O-')">O-</button>
+    </div>
+  </main>
+<footer class="footer">My Blood Is Yours · دمنا واحد</footer>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const region = params.get("region") || "AlBekaa";
+const town = params.get("town") || "Al Marj";
+document.getElementById("townName").textContent = town === "Lala" ? "Lala & Kafraiya" : town;
+
+function selectBlood(bloodType){
+  location.href = "results.html?region=" + encodeURIComponent(region)
+    + "&town=" + encodeURIComponent(town)
+    + "&blood=" + encodeURIComponent(bloodType);
+}
+function goBack(){
+  location.href = "menu.htm?region=" + encodeURIComponent(region)
+    + "&town=" + encodeURIComponent(town);
+}
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>

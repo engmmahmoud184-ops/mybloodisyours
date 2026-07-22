@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blood Donors</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+<link rel="icon" type="image/png" sizes="32x32" href="assets/logo-32.png">
+<link rel="apple-touch-icon" href="assets/logo-192.png">
+
+<style>
+.load-more-wrap{
+  display:flex;
+  justify-content:center;
+  margin-top:20px;
+}
+.load-more-btn{
+  width:min(100%,320px);
+}
+.results-progress{
+  text-align:center;
+  color:var(--muted);
+  font-weight:700;
+  margin:14px 0 4px;
+}
+</style>
+
+
+<style>
+.donor-card{position:relative;overflow:hidden;padding:20px;border:1px solid rgba(16,35,63,.10);background:linear-gradient(145deg,#fff,#fbfcff)}
+.donor-card::before{content:"";position:absolute;top:0;left:0;width:5px;height:100%;background:linear-gradient(180deg,var(--red),var(--navy))}
+.donor-card-head{display:flex;align-items:center;gap:14px;margin-bottom:16px}
+.donor-avatar{width:50px;height:50px;flex:0 0 50px;display:flex;align-items:center;justify-content:center;border-radius:16px;color:#fff;font-size:22px;font-weight:900;background:linear-gradient(135deg,var(--red),var(--red-dark))}
+.donor-main{min-width:0;flex:1}.donor-name{margin:0 0 5px;font-size:19px}.donor-meta{color:var(--muted);font-size:14px;font-weight:700}
+.donor-status{display:inline-flex;align-items:center;gap:7px;margin-top:7px;color:#137647;font-size:13px;font-weight:900}
+.donor-status::before{content:"";width:8px;height:8px;border-radius:50%;background:#20b26b}
+.action-btn.is-loading{opacity:.65;pointer-events:none}
+.cooldown-note{margin:14px 0 0;color:var(--muted);text-align:center;font-size:13px;line-height:1.6}
+.global-cooldown-info{background:#eef5ff;color:var(--navy);border:1px solid #cfe0f5;border-radius:16px;padding:14px 16px;margin-bottom:16px;text-align:center;line-height:1.7;font-weight:750}
+@media(max-width:620px){.donor-card{padding:17px}.donor-actions{grid-template-columns:1fr}}
+</style>
+
+
+<style>
+.contact-confirm-overlay{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(7,20,38,.68);
+  backdrop-filter:blur(5px);
+}
+.contact-confirm-overlay.is-open{display:flex}
+.contact-confirm-modal{
+  width:min(100%,520px);
+  background:#fff;
+  border-radius:24px;
+  padding:26px;
+  box-shadow:0 28px 80px rgba(0,0,0,.28);
+  border:1px solid rgba(255,255,255,.7);
+  animation:confirmIn .18s ease-out;
+}
+@keyframes confirmIn{
+  from{opacity:0;transform:translateY(10px) scale(.98)}
+  to{opacity:1;transform:translateY(0) scale(1)}
+}
+.contact-confirm-icon{
+  width:58px;
+  height:58px;
+  margin:0 auto 15px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:18px;
+  background:linear-gradient(135deg,var(--red),var(--red-dark));
+  color:#fff;
+  font-size:27px;
+  box-shadow:0 10px 26px rgba(193,18,47,.23);
+}
+.contact-confirm-title{
+  margin:0 0 13px;
+  text-align:center;
+  color:var(--navy);
+  font-size:23px;
+  font-weight:900;
+}
+.contact-confirm-text{
+  margin:0;
+  color:var(--text);
+  line-height:1.75;
+  text-align:center;
+  font-size:15px;
+}
+.contact-confirm-text.ar{
+  direction:rtl;
+  margin-top:13px;
+  color:var(--navy);
+  font-weight:700;
+}
+.contact-confirm-actions{
+  display:grid;
+  grid-template-columns:1fr 1.4fr;
+  gap:10px;
+  margin-top:22px;
+}
+.contact-confirm-cancel{
+  background:#eef1f5;
+  color:var(--navy);
+}
+.contact-confirm-continue{
+  background:linear-gradient(135deg,var(--red),var(--red-dark));
+  color:#fff;
+}
+@media(max-width:480px){
+  .contact-confirm-modal{padding:22px 17px;border-radius:21px}
+  .contact-confirm-title{font-size:20px}
+  .contact-confirm-actions{grid-template-columns:1fr}
+}
+</style>
+
+<meta name="theme-color" content="#0e223d">
+<meta name="description" content="My Blood Is Yours - Find blood donors across Lebanon.">
+<link rel="manifest" href="manifest.webmanifest">
+  <link rel="canonical" href="https://mybloodisyours.com/results.html">
+  <meta property="og:title" content="Blood Donors">
+  <meta property="og:description" content="View matching voluntary blood donors and contact them by phone or WhatsApp.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://mybloodisyours.com/results.html">
+  <meta property="og:image" content="https://mybloodisyours.com/assets/logo-512.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Blood Donors">
+  <meta name="twitter:description" content="View matching voluntary blood donors and contact them by phone or WhatsApp.">
+  <meta name="twitter:image" content="https://mybloodisyours.com/assets/logo-512.png">
+</head>
+<body>
+<a class="skip-link" href="#mainContent">Skip to content | انتقل إلى المحتوى</a>
+<div class="app-shell">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <div class="topbar-title"><div class="brand-wrap"><img src="assets/logo-64.png" class="brand-logo" alt="My Blood Is Yours Logo"><span>Blood Donors | المتبرعون بالدم</span></div></div>
+    <div class="back-placeholder"></div>
+  </div>
+
+  <main id="mainContent" class="container">
+    <section class="hero-card">
+      <h1 id="bloodType" class="hero-title"></h1>
+      <p id="townName" class="hero-subtitle"></p>
+      <p id="count" class="hero-subtitle"></p>
+    </section>
+
+    <div id="loading" class="status">Loading donors... جاري تحميل المتبرعين</div>
+    <div id="error" class="status" style="display:none;color:#8b0000"></div>
+    <div class="global-cooldown-info">
+        Donors are displayed in a random order to distribute contact fairly.<br>
+        يتم عرض المتبرعين بترتيب عشوائي لتوزيع التواصل بشكل عادل.
+    </div>
+    <div id="donorList"></div>
+    <div id="resultsProgress" class="results-progress"></div>
+    <div id="loadMoreWrap" class="load-more-wrap" style="display:none;">
+        <button id="loadMoreBtn" class="btn btn-primary load-more-btn" onclick="loadMoreDonors()">
+            Load More | عرض المزيد
+        </button>
+    </div>
+  </main>
+<footer class="footer">My Blood Is Yours · دمنا واحد</footer>
+</div>
+
+<script>
+const FIREBASE_URL = "https://lebanonbloodcategoryproject.firebaseio.com";
+const DONORS_PER_PAGE = 50;
+
+const params = new URLSearchParams(window.location.search);
+const region = params.get("region") || "AlBekaa";
+const town = params.get("town") || "Al Marj";
+const blood = params.get("blood") || "A+";
+
+let shuffledDonors = [];
+let visibleDonorCount = 0;
+let pendingContactAction = null;
+
+document.getElementById("bloodType").textContent =
+  "Blood Type: " + blood;
+
+document.getElementById("townName").textContent =
+  "Town: " + (town === "Lala" ? "Lala & Kafraiya" : town);
+
+function normalize(value) {
+  return (value || "").toString().trim().toLowerCase();
+}
+
+function normalizeLebanonPhone(phone) {
+  let digits = String(phone || "").replace(/\D/g, "");
+
+  if (digits.startsWith("00961")) {
+    digits = digits.substring(2);
+  }
+
+  if (digits.startsWith("961")) {
+    return digits;
+  }
+
+  if (digits.startsWith("0")) {
+    digits = digits.substring(1);
+  }
+
+  return "961" + digits;
+}
+
+function shuffleArray(array) {
+  const copy = [...array];
+
+  for (let i = copy.length - 1; i > 0; i--) {
+    const randomIndex = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[randomIndex]] =
+      [copy[randomIndex], copy[i]];
+  }
+
+  return copy;
+}
+
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function donorInitial(name) {
+  const value = String(name || "D").trim();
+  return escapeHtml((value.charAt(0) || "D").toUpperCase());
+}
+
+async function loadDonors() {
+  const loading = document.getElementById("loading");
+  const error = document.getElementById("error");
+
+  error.style.display = "none";
+
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+    const response = await fetch(
+      FIREBASE_URL + "/Persons.json",
+      {
+        cache: "no-store",
+        signal: controller.signal
+      }
+    );
+
+    clearTimeout(timeoutId);
+
+    if (!response.ok) {
+      throw new Error("Firebase returned HTTP " + response.status);
+    }
+
+    const persons = await response.json();
+
+    loading.style.display = "none";
+
+    if (!persons) {
+      showEmpty();
+      return;
+    }
+
+    const donors = Object.entries(persons)
+      .map(([id, person]) => ({
+        id,
+        ...person
+      }))
+      .filter(person =>
+        normalize(person.Location) === normalize(town) &&
+        normalize(person.BloodType) === normalize(blood)
+      );
+
+    document.getElementById("count").textContent =
+      donors.length + " donor(s) found";
+
+    if (donors.length === 0) {
+      showEmpty();
+      return;
+    }
+
+    shuffledDonors = shuffleArray(donors);
+    visibleDonorCount = 0;
+
+    document.getElementById("donorList").innerHTML = "";
+    renderNextDonors();
+
+  } catch (errorValue) {
+    loading.style.display = "none";
+    error.style.display = "block";
+
+    error.innerHTML =
+      "Unable to load donors.<br>" +
+      "تعذر تحميل المتبرعين<br><br>" +
+      "Please check the internet connection and Firebase read permissions." +
+      "<br><small>" +
+      escapeHtml(
+        errorValue.name === "AbortError"
+          ? "Firebase request timed out after 15 seconds."
+          : errorValue.message
+      ) +
+      "</small>";
+  }
+}
+
+function renderNextDonors() {
+  const donorList = document.getElementById("donorList");
+
+  const nextLimit = Math.min(
+    visibleDonorCount + DONORS_PER_PAGE,
+    shuffledDonors.length
+  );
+
+  for (
+    let index = visibleDonorCount;
+    index < nextLimit;
+    index++
+  ) {
+    const person = shuffledDonors[index];
+    const phone = String(person.PhoneNumber || "");
+    const whatsappPhone = normalizeLebanonPhone(phone);
+
+    const card = document.createElement("article");
+    card.className = "donor-card";
+
+    card.innerHTML = `
+      <div class="donor-card-head">
+        <div class="donor-avatar">
+          ${donorInitial(person.FullName)}
+        </div>
+
+        <div class="donor-main">
+          <h3 class="donor-name">
+            ${escapeHtml(person.FullName || "Donor")}
+          </h3>
+
+          <div class="donor-meta">
+            ${escapeHtml(person.BloodType || blood)}
+            ·
+            ${escapeHtml(person.Location || town)}
+          </div>
+
+          <div class="donor-status">
+            Available | متاح
+          </div>
+        </div>
+      </div>
+
+      ${
+        phone
+        ? `<div class="donor-actions">
+             <a
+               class="action-btn call-btn"
+               href="tel:${encodeURIComponent(phone)}"
+               data-action="call">
+               ☎ Call | اتصال
+             </a>
+
+             <a
+               class="action-btn whatsapp-btn"
+               href="https://wa.me/${whatsappPhone}"
+               target="_blank"
+               rel="noopener"
+               data-action="whatsapp">
+               ◉ WhatsApp | واتساب
+             </a>
+           </div>`
+        : ""
+      }
+    `;
+
+    donorList.appendChild(card);
+  }
+
+  visibleDonorCount = nextLimit;
+
+  bindContactActions();
+  updateLoadMoreState();
+}
+
+function bindContactActions() {
+  document
+    .querySelectorAll("[data-action]")
+    .forEach(link => {
+      if (link.dataset.bound === "true") {
+        return;
+      }
+
+      link.dataset.bound = "true";
+
+      link.addEventListener("click", event => {
+        event.preventDefault();
+
+        pendingContactAction = {
+          action: link.dataset.action,
+          destination: link.href
+        };
+
+        openContactConfirmation();
+      });
+    });
+}
+
+function openContactConfirmation() {
+  const overlay =
+    document.getElementById("contactConfirmOverlay");
+
+  overlay.classList.add("is-open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeContactConfirmation() {
+  const overlay =
+    document.getElementById("contactConfirmOverlay");
+
+  overlay.classList.remove("is-open");
+  document.body.style.overflow = "";
+  pendingContactAction = null;
+}
+
+function continueContactAction() {
+  if (!pendingContactAction) {
+    return;
+  }
+
+  const action = pendingContactAction.action;
+  const destination = pendingContactAction.destination;
+
+  document
+    .getElementById("contactConfirmOverlay")
+    .classList.remove("is-open");
+
+  document.body.style.overflow = "";
+  pendingContactAction = null;
+
+  if (action === "whatsapp") {
+    window.open(destination, "_blank", "noopener");
+  } else {
+    window.location.href = destination;
+  }
+}
+
+document.addEventListener("keydown", event => {
+  if (event.key === "Escape") {
+    closeContactConfirmation();
+  }
+});
+
+
+
+function loadMoreDonors() {
+  renderNextDonors();
+}
+
+function updateLoadMoreState() {
+  const loadMoreWrap =
+    document.getElementById("loadMoreWrap");
+
+  const progress =
+    document.getElementById("resultsProgress");
+
+  const shown = Math.min(
+    visibleDonorCount,
+    shuffledDonors.length
+  );
+
+  progress.textContent =
+    "Showing " +
+    shown +
+    " of " +
+    shuffledDonors.length +
+    " donors | عرض " +
+    shown +
+    " من " +
+    shuffledDonors.length;
+
+  loadMoreWrap.style.display =
+    shown < shuffledDonors.length
+      ? "flex"
+      : "none";
+}
+
+function showEmpty() {
+  document.getElementById("donorList").innerHTML = `
+    <div class="status">
+      No donors found for
+      ${escapeHtml(blood)}
+      in
+      ${escapeHtml(town)}.
+      <br>
+      لا يوجد متبرعون مطابقون حاليًا
+    </div>
+  `;
+
+  document.getElementById("count").textContent =
+    "0 donor(s) found";
+
+  document.getElementById("loadMoreWrap").style.display =
+    "none";
+
+  document.getElementById("resultsProgress").textContent =
+    "";
+}
+
+function goBack() {
+  window.location.href =
+    "search.html?region=" +
+    encodeURIComponent(region) +
+    "&town=" +
+    encodeURIComponent(town);
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const overlay = document.getElementById("contactConfirmOverlay");
+
+  if (overlay) {
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) {
+        closeContactConfirmation();
+      }
+    });
+  }
+
+  loadDonors();
+});
+</script>
+
+<div id="contactConfirmOverlay"
+     class="contact-confirm-overlay"
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="contactConfirmTitle"
+     aria-describedby="contactConfirmDescription">
+
+  <div class="contact-confirm-modal">
+    <div class="contact-confirm-icon" aria-hidden="true">🩸</div>
+
+    <h2 id="contactConfirmTitle" class="contact-confirm-title">
+      Please Read Before Contacting
+      <br>
+      يرجى القراءة قبل التواصل
+    </h2>
+
+    <div id="contactConfirmDescription">
+      <p class="contact-confirm-text">
+        Please contact this donor
+        <strong>only when there is a genuine need for blood donation.</strong>
+        This platform is intended exclusively for humanitarian purposes.
+      </p>
+
+      <p class="contact-confirm-text ar" dir="rtl">
+        يرجى التواصل مع هذا المتبرع
+        <strong>فقط عند وجود حاجة حقيقية للتبرع بالدم.</strong>
+        هذه المنصة مخصصة للأغراض الإنسانية فقط.
+      </p>
+    </div>
+
+    <div class="contact-confirm-actions">
+      <button type="button"
+              class="btn contact-confirm-cancel"
+              onclick="closeContactConfirmation()">
+        Cancel | إلغاء
+      </button>
+
+      <button type="button"
+              class="btn contact-confirm-continue"
+              onclick="continueContactAction()">
+        I Understand, Continue
+        <br>
+        أفهم ذلك، متابعة
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+const DONORS_PER_PAGE = 50;
+
+const params =
+  new URLSearchParams(window.location.search);
+
+const region =
+  params.get("region") || "AlBekaa";
+
+const town =
+  params.get("town") || "Al Marj";
+
+const blood =
+  params.get("blood") || "A+";
+
+let donors = [];
+let displayedCount = 0;
+let pendingContact = null;
+
+document.addEventListener("DOMContentLoaded", () => {
+  initializeResultsPage();
+});
+
+function initializeResultsPage() {
+  document.getElementById("bloodType").textContent =
+    "Blood Type: " + blood;
+
+  document.getElementById("townName").textContent =
+    "Town: " + (
+      town === "Lala"
+        ? "Lala & Kafraiya"
+        : town
+    );
+
+  const overlay =
+    document.getElementById("contactConfirmOverlay");
+
+  if (overlay) {
+    overlay.addEventListener("click", event => {
+      if (event.target === overlay) {
+        closeContactConfirmation();
+      }
+    });
+  }
+
+  document.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      closeContactConfirmation();
+    }
+  });
+
+  loadDonors();
+}
+
+async function loadDonors() {
+  const loading =
+    document.getElementById("loading");
+
+  const error =
+    document.getElementById("error");
+
+  loading.innerHTML = `
+    <span class="spinner"></span>
+    Loading donors... جاري تحميل المتبرعين
+  `;
+
+  loading.style.display = "flex";
+  error.style.display = "none";
+
+  try {
+    const persons =
+      await MyBloodApp.getPersons();
+
+    loading.style.display = "none";
+
+    if (!persons) {
+      showEmpty();
+      return;
+    }
+
+    donors =
+      MyBloodApp.shuffle(
+        Object.entries(persons)
+          .map(([id, person]) => ({
+            id,
+            ...person
+          }))
+          .filter(person =>
+            MyBloodApp.normalizeText(person.Location) ===
+              MyBloodApp.normalizeText(town) &&
+            MyBloodApp.normalizeText(person.BloodType) ===
+              MyBloodApp.normalizeText(blood)
+          )
+      );
+
+    displayedCount = 0;
+
+    document.getElementById("donorList").innerHTML = "";
+
+    document.getElementById("count").textContent =
+      donors.length + " donor(s) found";
+
+    if (!donors.length) {
+      showEmpty();
+      return;
+    }
+
+    renderNextDonors();
+  } catch (loadError) {
+    loading.style.display = "none";
+    error.style.display = "block";
+
+    error.innerHTML = `
+      Unable to load donors.<br>
+      تعذر تحميل المتبرعين.
+      <br><small>
+        ${MyBloodApp.escapeHtml(loadError.message)}
+      </small>
+      <br>
+      <button
+        class="btn btn-secondary retry-button"
+        onclick="loadDonors()">
+        Retry | إعادة المحاولة
+      </button>
+    `;
+  }
+}
+
+function renderNextDonors() {
+  const list =
+    document.getElementById("donorList");
+
+  const limit =
+    Math.min(
+      displayedCount + DONORS_PER_PAGE,
+      donors.length
+    );
+
+  for (
+    let index = displayedCount;
+    index < limit;
+    index++
+  ) {
+    const donor = donors[index];
+
+    list.appendChild(
+      createDonorCard(donor)
+    );
+  }
+
+  displayedCount = limit;
+
+  updateResultsProgress();
+}
+
+function createDonorCard(donor) {
+  const phone =
+    String(donor.PhoneNumber || "");
+
+  const whatsappPhone =
+    MyBloodApp.normalizeLebanonPhone(phone);
+
+  const card =
+    document.createElement("article");
+
+  card.className = "donor-card";
+
+  const initial =
+    MyBloodApp.escapeHtml(
+      String(donor.FullName || "D")
+        .trim()
+        .charAt(0)
+        .toUpperCase() || "D"
+    );
+
+  card.innerHTML = `
+    <div class="donor-card-head">
+      <div class="donor-avatar">
+        ${initial}
+      </div>
+
+      <div class="donor-main">
+        <h3 class="donor-name">
+          ${MyBloodApp.escapeHtml(
+            donor.FullName || "Donor"
+          )}
+        </h3>
+
+        <div class="donor-meta">
+          ${MyBloodApp.escapeHtml(
+            donor.BloodType || blood
+          )}
+          ·
+          ${MyBloodApp.escapeHtml(
+            donor.Location || town
+          )}
+        </div>
+
+        <div class="donor-status">
+          Available | متاح
+        </div>
+      </div>
+    </div>
+
+    ${
+      phone
+        ? `
+          <div class="donor-actions">
+            <button
+              class="action-btn call-btn"
+              type="button"
+              data-action="call"
+              data-destination="tel:${MyBloodApp.escapeHtml(phone)}">
+              ☎ Call | اتصال
+            </button>
+
+            <button
+              class="action-btn whatsapp-btn"
+              type="button"
+              data-action="whatsapp"
+              data-destination="https://wa.me/${MyBloodApp.escapeHtml(whatsappPhone)}">
+              ◉ WhatsApp | واتساب
+            </button>
+          </div>
+        `
+        : ""
+    }
+  `;
+
+  card
+    .querySelectorAll("[data-action]")
+    .forEach(button => {
+      button.addEventListener("click", () => {
+        pendingContact = {
+          action: button.dataset.action,
+          destination: button.dataset.destination
+        };
+
+        openContactConfirmation();
+      });
+    });
+
+  return card;
+}
+
+function updateResultsProgress() {
+  document.getElementById("resultsProgress").textContent =
+    "Showing " +
+    displayedCount +
+    " of " +
+    donors.length +
+    " donors | عرض " +
+    displayedCount +
+    " من " +
+    donors.length;
+
+  document.getElementById("loadMoreWrap").style.display =
+    displayedCount < donors.length
+      ? "flex"
+      : "none";
+}
+
+function loadMoreDonors() {
+  renderNextDonors();
+}
+
+function showEmpty() {
+  document.getElementById("donorList").innerHTML = `
+    <div class="status">
+      No matching donors were found for
+      ${MyBloodApp.escapeHtml(blood)}
+      in
+      ${MyBloodApp.escapeHtml(town)}.
+      <br>
+      لم يتم العثور على متبرعين مطابقين حاليًا.
+    </div>
+  `;
+
+  document.getElementById("count").textContent =
+    "0 donor(s) found";
+
+  document.getElementById("loadMoreWrap").style.display =
+    "none";
+
+  document.getElementById("resultsProgress").textContent =
+    "";
+}
+
+function openContactConfirmation() {
+  const overlay =
+    document.getElementById("contactConfirmOverlay");
+
+  if (!overlay) {
+    continueContactAction();
+    return;
+  }
+
+  overlay.classList.add("is-open");
+  document.body.style.overflow = "hidden";
+}
+
+function closeContactConfirmation() {
+  const overlay =
+    document.getElementById("contactConfirmOverlay");
+
+  if (overlay) {
+    overlay.classList.remove("is-open");
+  }
+
+  document.body.style.overflow = "";
+  pendingContact = null;
+}
+
+function continueContactAction() {
+  if (!pendingContact) {
+    return;
+  }
+
+  const {
+    action,
+    destination
+  } = pendingContact;
+
+  const overlay =
+    document.getElementById("contactConfirmOverlay");
+
+  if (overlay) {
+    overlay.classList.remove("is-open");
+  }
+
+  document.body.style.overflow = "";
+  pendingContact = null;
+
+  if (action === "whatsapp") {
+    window.open(
+      destination,
+      "_blank",
+      "noopener"
+    );
+    return;
+  }
+
+  window.location.href = destination;
+}
+
+function goBack() {
+  window.location.href =
+    "search-wizard.html";
+}
+</script>
+
+</body>
+</html>

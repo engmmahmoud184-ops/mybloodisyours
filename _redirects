@@ -1,0 +1,8 @@
+# Friendly routes
+/                 /index.html              200
+/find-donor       /search-wizard.html      200
+/become-a-donor   /add-yourself.html       200
+/about            /about.html              200
+/contact          /contact.html            200
+
+# www to apex is configured from Cloudflare Custom Domains.

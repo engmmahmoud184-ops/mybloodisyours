@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Our Services</title>
+  <link rel="stylesheet" href="styles.css">
+<link rel="icon" type="image/png" sizes="32x32" href="assets/logo-32.png">
+<link rel="apple-touch-icon" href="assets/logo-192.png">
+<meta name="theme-color" content="#0e223d">
+<meta name="description" content="My Blood Is Yours - Find blood donors across Lebanon.">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+<div class="app-shell">
+  <div class="topbar">
+    <button class="back-btn" onclick="goToRegion()">←</button>
+    <div class="topbar-title"><div class="brand-wrap"><img src="assets/logo-64.png" class="brand-logo" alt="My Blood Is Yours Logo"><span>Our Services | خدماتنا</span></div></div>
+    <div class="back-placeholder"></div>
+  </div>
+
+  <main class="container">
+    <section class="hero-card">
+      <h1 id="townName" class="hero-title"></h1>
+      <p class="hero-subtitle">Choose a service to continue</p>
+    </section>
+
+    <div class="grid">
+      <button class="btn btn-primary" onclick="searchDonors()">Search<br>بحث عن متبرع بالدم</button>
+      <button class="btn btn-primary" onclick="addYourself()">Add Your Blood Category<br>أضف فئة دمك</button>
+      <button class="btn btn-secondary" onclick="location.href='about.html'">About Us<br>معلومات عن دمنا واحد</button>
+      <button class="btn btn-secondary" onclick="location.href='contact.html'">Contact Us<br>راسلنا</button>
+    </div>
+
+    <div id="loading" class="status" style="display:none;margin-top:16px;">Loading... جاري التحميل</div>
+    <img id="sponsorImage" class="sponsor" style="display:none" alt="Sponsor">
+  </main>
+<footer class="footer">My Blood Is Yours · دمنا واحد</footer>
+</div>
+
+<script>
+const params = new URLSearchParams(location.search);
+const region = params.get("region") || "AlBekaa";
+const town = params.get("town") || "Al Marj";
+const displayTown = town === "Lala" ? "Lala & Kafraiya" : town;
+document.getElementById("townName").textContent = displayTown;
+document.title = displayTown + " - Our Services";
+
+function goToRegion() { const regionPages={"Beirut": "beirut.html", "AlBekaa": "albekaa.html", "Southlebanon": "south-lebanon.html", "NorthLebanon": "north-lebanon.html", "MountLebanon": "mount-lebanon.html", "kessrouane": "kesrouane.html", "baalback": "baalback.html", "Nabttieh": "nabtieh.html", "Aakkar": "aakkar.html"}; location.href=regionPages[region]||'index.html'; }
+function searchDonors() {
+  document.getElementById("loading").style.display = "block";
+  location.href = "search.html?region=" + encodeURIComponent(region) + "&town=" + encodeURIComponent(town);
+}
+function addYourself() {
+  location.href = "add-yourself.html?region=" + encodeURIComponent(region) + "&town=" + encodeURIComponent(town);
+}
+const sponsors = [
+  {image:"https://cdn.shopify.com/s/files/1/0603/7621/9837/files/saab.jpg?v=1716886171",link:"https://www.instagram.com/saabprinthouse"},
+  {image:"https://cdn.shopify.com/s/files/1/0603/7621/9837/files/caramello.jpg?v=1716886570",link:"https://www.facebook.com/caramello86"}
+];
+let sponsorIndex = 0;
+const sponsorImage = document.getElementById("sponsorImage");
+function showSponsor(){
+  if(!sponsors.length) return;
+  const s=sponsors[sponsorIndex];
+  sponsorImage.src=s.image;
+  sponsorImage.style.display="block";
+  sponsorImage.onclick=()=>window.open(s.link,"_blank");
+  sponsorIndex=(sponsorIndex+1)%sponsors.length;
+}
+showSponsor();
+setInterval(showSponsor,1900);
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  });
+}
+</script>
+
+</body>
+</html>

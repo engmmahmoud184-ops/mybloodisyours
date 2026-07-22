@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Contact | My Blood Is Yours</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="app.js" defer></script>
+  <link rel="canonical" href="https://mybloodisyours.com/contact.html">
+  <meta property="og:title" content="Contact | My Blood Is Yours">
+  <meta property="og:description" content="Contact the My Blood Is Yours initiative or report incorrect donor information.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://mybloodisyours.com/contact.html">
+  <meta property="og:image" content="https://mybloodisyours.com/assets/logo-512.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Contact | My Blood Is Yours">
+  <meta name="twitter:description" content="Contact the My Blood Is Yours initiative or report incorrect donor information.">
+  <meta name="twitter:image" content="https://mybloodisyours.com/assets/logo-512.png">
+</head>
+<body>
+<a class="skip-link" href="#mainContent">Skip to content | انتقل إلى المحتوى</a>
+<header class="v3-nav">
+  <a class="v3-brand" href="index.html"><img src="assets/logo-64.png"><span>My Blood Is Yours | دمنا واحد</span></a>
+  <nav class="v3-nav-links"><a href="index.html">Home</a><a href="about.html">About</a><a href="search-wizard.html">Find Donor</a></nav>
+</header>
+
+<section id="mainContent" class="v3-section">
+  <div class="v3-section-head">
+    <h2>Contact Us | تواصل معنا</h2>
+    <p>Send a request, report incorrect information, or contact the initiative team.</p>
+  </div>
+
+  <div class="contact-layout">
+    <section class="form-card">
+      <form id="contactForm" onsubmit="submitRequest(event)">
+        <div class="form-group"><label class="form-label">Full Name | الاسم الكامل</label><input id="fullName" class="form-control" required></div>
+        <div class="form-group"><label class="form-label">Phone Number | رقم الهاتف</label><input id="phoneNumber" class="form-control" required></div>
+        <div class="form-group"><label class="form-label">Email | البريد الإلكتروني</label><input id="email" type="email" class="form-control"></div>
+        <div class="form-group">
+          <label class="form-label">Request Type | نوع الطلب</label>
+          <select id="requestType" class="form-control" required>
+            <option value="">Choose request type</option>
+            <option>General Inquiry</option>
+            <option>Technical Support</option>
+            <option>Report Incorrect Information</option>
+            <option>Delete Donor Information</option>
+            <option>Suggestion</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">Message | الرسالة</label><textarea id="messageText" class="form-control" required></textarea></div>
+        <button id="submitBtn" class="btn btn-primary" type="submit">Submit Request | إرسال الطلب</button>
+        <div id="statusMessage" class="message"></div>
+      </form>
+    </section>
+
+    <aside class="direct-contact-card">
+      <h3>Direct Contact | تواصل مباشر</h3>
+
+      <div class="direct-contact-item">
+        <div class="direct-contact-icon">✉</div>
+        <div>
+          <div class="direct-contact-label">Email | البريد الإلكتروني</div>
+          <div class="direct-contact-value">
+            eng.mohamad.mahmoud1986@gmail.com
+          </div>
+        </div>
+      </div>
+
+      <div class="direct-contact-item">
+        <div class="direct-contact-icon">☎</div>
+        <div>
+          <div class="direct-contact-label">Phone / WhatsApp | الهاتف / واتساب</div>
+          <div class="direct-contact-value">
+            0096170530939
+          </div>
+        </div>
+      </div>
+
+      <div class="direct-contact-actions">
+        <a class="btn btn-secondary"
+           href="mailto:eng.mohamad.mahmoud1986@gmail.com">
+          ✉ Email Us | راسلنا عبر البريد
+        </a>
+
+        <a class="btn whatsapp-contact"
+           href="https://wa.me/96170530939"
+           target="_blank"
+           rel="noopener">
+          ◉ WhatsApp | واتساب
+        </a>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<footer class="v3-footer">
+  <strong>My Blood Is Yours | دمنا واحد</strong>
+  <p>Founded by Eng. Mohamad Mahmoud</p>
+</footer>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  document
+    .getElementById("contactForm")
+    .addEventListener("submit", submitRequest);
+});
+
+async function submitRequest(event) {
+  event.preventDefault();
+
+  const fullName =
+    document.getElementById("fullName").value.trim();
+
+  const phoneNumber =
+    MyBloodApp.cleanPhone(
+      document.getElementById("phoneNumber").value
+    );
+
+  const email =
+    document.getElementById("email").value.trim();
+
+  const requestType =
+    document.getElementById("requestType").value;
+
+  const message =
+    document.getElementById("messageText").value.trim();
+
+  const button =
+    document.getElementById("submitBtn");
+
+  const status =
+    document.getElementById("statusMessage");
+
+  if (fullName.length < 3) {
+    MyBloodApp.showMessage(
+      status,
+      "error",
+      "Please enter your full name. يرجى إدخال الاسم الكامل."
+    );
+    return;
+  }
+
+  if (!MyBloodApp.isValidLebanonPhone(phoneNumber)) {
+    MyBloodApp.showMessage(
+      status,
+      "error",
+      "Please enter a valid phone number. يرجى إدخال رقم هاتف صحيح."
+    );
+    return;
+  }
+
+  if (!requestType) {
+    MyBloodApp.showMessage(
+      status,
+      "error",
+      "Please choose a request type. يرجى اختيار نوع الطلب."
+    );
+    return;
+  }
+
+  if (message.length < 5) {
+    MyBloodApp.showMessage(
+      status,
+      "error",
+      "Please enter your message. يرجى كتابة الرسالة."
+    );
+    return;
+  }
+
+  MyBloodApp.setButtonLoading(
+    button,
+    true,
+    "Sending... جاري الإرسال"
+  );
+
+  try {
+    await MyBloodApp.addContactRequest({
+      FullName: fullName,
+      PhoneNumber: phoneNumber,
+      Email: email,
+      RequestType: requestType,
+      Message: message,
+      CreatedAt: new Date().toISOString(),
+      Source: "WebsiteV3"
+    });
+
+    MyBloodApp.showMessage(
+      status,
+      "success",
+      "Your request was submitted successfully. تم إرسال طلبك بنجاح."
+    );
+
+    document.getElementById("contactForm").reset();
+  } catch (error) {
+    MyBloodApp.showMessage(
+      status,
+      "error",
+      "Unable to submit your request. Check Firebase write permission. تعذر إرسال الطلب."
+    );
+  } finally {
+    MyBloodApp.setButtonLoading(
+      button,
+      false
+    );
+  }
+}
+</script>
+</body>
+</html>
