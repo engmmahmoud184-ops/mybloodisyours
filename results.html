@@ -169,456 +169,81 @@
 <footer class="footer">My Blood Is Yours · دمنا واحد</footer>
 </div>
 
-<script>
-const FIREBASE_URL = "https://lebanonbloodcategoryproject.firebaseio.com";
-const DONORS_PER_PAGE = 50;
 
-const params = new URLSearchParams(window.location.search);
-const region = params.get("region") || "AlBekaa";
-const town = params.get("town") || "Al Marj";
-const blood = params.get("blood") || "A+";
-
-let shuffledDonors = [];
-let visibleDonorCount = 0;
-let pendingContactAction = null;
-
-document.getElementById("bloodType").textContent =
-  "Blood Type: " + blood;
-
-document.getElementById("townName").textContent =
-  "Town: " + (town === "Lala" ? "Lala & Kafraiya" : town);
-
-function normalize(value) {
-  return (value || "").toString().trim().toLowerCase();
-}
-
-function normalizeLebanonPhone(phone) {
-  let digits = String(phone || "").replace(/\D/g, "");
-
-  if (digits.startsWith("00961")) {
-    digits = digits.substring(2);
-  }
-
-  if (digits.startsWith("961")) {
-    return digits;
-  }
-
-  if (digits.startsWith("0")) {
-    digits = digits.substring(1);
-  }
-
-  return "961" + digits;
-}
-
-function shuffleArray(array) {
-  const copy = [...array];
-
-  for (let i = copy.length - 1; i > 0; i--) {
-    const randomIndex = Math.floor(Math.random() * (i + 1));
-    [copy[i], copy[randomIndex]] =
-      [copy[randomIndex], copy[i]];
-  }
-
-  return copy;
-}
-
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#039;");
-}
-
-function donorInitial(name) {
-  const value = String(name || "D").trim();
-  return escapeHtml((value.charAt(0) || "D").toUpperCase());
-}
-
-async function loadDonors() {
-  const loading = document.getElementById("loading");
-  const error = document.getElementById("error");
-
-  error.style.display = "none";
-
-  try {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-    const response = await fetch(
-      FIREBASE_URL + "/Persons.json",
-      {
-        cache: "no-store",
-        signal: controller.signal
-      }
-    );
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error("Firebase returned HTTP " + response.status);
-    }
-
-    const persons = await response.json();
-
-    loading.style.display = "none";
-
-    if (!persons) {
-      showEmpty();
-      return;
-    }
-
-    const donors = Object.entries(persons)
-      .map(([id, person]) => ({
-        id,
-        ...person
-      }))
-      .filter(person =>
-        normalize(person.Location) === normalize(town) &&
-        normalize(person.BloodType) === normalize(blood)
-      );
-
-    document.getElementById("count").textContent =
-      donors.length + " donor(s) found";
-
-    if (donors.length === 0) {
-      showEmpty();
-      return;
-    }
-
-    shuffledDonors = shuffleArray(donors);
-    visibleDonorCount = 0;
-
-    document.getElementById("donorList").innerHTML = "";
-    renderNextDonors();
-
-  } catch (errorValue) {
-    loading.style.display = "none";
-    error.style.display = "block";
-
-    error.innerHTML =
-      "Unable to load donors.<br>" +
-      "تعذر تحميل المتبرعين<br><br>" +
-      "Please check the internet connection and Firebase read permissions." +
-      "<br><small>" +
-      escapeHtml(
-        errorValue.name === "AbortError"
-          ? "Firebase request timed out after 15 seconds."
-          : errorValue.message
-      ) +
-      "</small>";
-  }
-}
-
-function renderNextDonors() {
-  const donorList = document.getElementById("donorList");
-
-  const nextLimit = Math.min(
-    visibleDonorCount + DONORS_PER_PAGE,
-    shuffledDonors.length
-  );
-
-  for (
-    let index = visibleDonorCount;
-    index < nextLimit;
-    index++
-  ) {
-    const person = shuffledDonors[index];
-    const phone = String(person.PhoneNumber || "");
-    const whatsappPhone = normalizeLebanonPhone(phone);
-
-    const card = document.createElement("article");
-    card.className = "donor-card";
-
-    card.innerHTML = `
-      <div class="donor-card-head">
-        <div class="donor-avatar">
-          ${donorInitial(person.FullName)}
-        </div>
-
-        <div class="donor-main">
-          <h3 class="donor-name">
-            ${escapeHtml(person.FullName || "Donor")}
-          </h3>
-
-          <div class="donor-meta">
-            ${escapeHtml(person.BloodType || blood)}
-            ·
-            ${escapeHtml(person.Location || town)}
-          </div>
-
-          <div class="donor-status">
-            Available | متاح
-          </div>
-        </div>
-      </div>
-
-      ${
-        phone
-        ? `<div class="donor-actions">
-             <a
-               class="action-btn call-btn"
-               href="tel:${encodeURIComponent(phone)}"
-               data-action="call">
-               ☎ Call | اتصال
-             </a>
-
-             <a
-               class="action-btn whatsapp-btn"
-               href="https://wa.me/${whatsappPhone}"
-               target="_blank"
-               rel="noopener"
-               data-action="whatsapp">
-               ◉ WhatsApp | واتساب
-             </a>
-           </div>`
-        : ""
-      }
-    `;
-
-    donorList.appendChild(card);
-  }
-
-  visibleDonorCount = nextLimit;
-
-  bindContactActions();
-  updateLoadMoreState();
-}
-
-function bindContactActions() {
-  document
-    .querySelectorAll("[data-action]")
-    .forEach(link => {
-      if (link.dataset.bound === "true") {
-        return;
-      }
-
-      link.dataset.bound = "true";
-
-      link.addEventListener("click", event => {
-        event.preventDefault();
-
-        pendingContactAction = {
-          action: link.dataset.action,
-          destination: link.href
-        };
-
-        openContactConfirmation();
-      });
-    });
-}
-
-function openContactConfirmation() {
-  const overlay =
-    document.getElementById("contactConfirmOverlay");
-
-  overlay.classList.add("is-open");
-  document.body.style.overflow = "hidden";
-}
-
-function closeContactConfirmation() {
-  const overlay =
-    document.getElementById("contactConfirmOverlay");
-
-  overlay.classList.remove("is-open");
-  document.body.style.overflow = "";
-  pendingContactAction = null;
-}
-
-async function continueContactAction() {
-  if (!pendingContact) {
-    return;
-  }
-
-  const {
-    action,
-    destination
-  } = pendingContact;
-
-  const overlay =
-    document.getElementById("contactConfirmOverlay");
-
-  if (overlay) {
-    overlay.classList.remove("is-open");
-  }
-
-  document.body.style.overflow = "";
-  pendingContact = null;
-
-  const phoneNumber =
-    destination
-      .replace("tel:", "")
-      .replace("https://wa.me/", "");
-
-  try {
-    await MyBloodApp.addOutgoingCall(
-      phoneNumber,
-      action
-    );
-  } catch (error) {
-    // Do not block the humanitarian contact action if logging fails.
-    console.warn("Unable to register outgoing contact:", error);
-  }
-
-  if (action === "whatsapp") {
-    window.open(
-      destination,
-      "_blank",
-      "noopener"
-    );
-    return;
-  }
-
-  window.location.href = destination;
-}
-
-document.addEventListener("keydown", event => {
-  if (event.key === "Escape") {
-    closeContactConfirmation();
-  }
-});
-
-
-
-function loadMoreDonors() {
-  renderNextDonors();
-}
-
-function updateLoadMoreState() {
-  const loadMoreWrap =
-    document.getElementById("loadMoreWrap");
-
-  const progress =
-    document.getElementById("resultsProgress");
-
-  const shown = Math.min(
-    visibleDonorCount,
-    shuffledDonors.length
-  );
-
-  progress.textContent =
-    "Showing " +
-    shown +
-    " of " +
-    shuffledDonors.length +
-    " donors | عرض " +
-    shown +
-    " من " +
-    shuffledDonors.length;
-
-  loadMoreWrap.style.display =
-    shown < shuffledDonors.length
-      ? "flex"
-      : "none";
-}
-
-function showEmpty() {
-  document.getElementById("donorList").innerHTML = `
-    <div class="status">
-      No donors found for
-      ${escapeHtml(blood)}
-      in
-      ${escapeHtml(town)}.
-      <br>
-      لا يوجد متبرعون مطابقون حاليًا
-    </div>
-  `;
-
-  document.getElementById("count").textContent =
-    "0 donor(s) found";
-
-  document.getElementById("loadMoreWrap").style.display =
-    "none";
-
-  document.getElementById("resultsProgress").textContent =
-    "";
-}
-
-function goBack() {
-  window.location.href =
-    "search.html?region=" +
-    encodeURIComponent(region) +
-    "&town=" +
-    encodeURIComponent(town);
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-  const overlay = document.getElementById("contactConfirmOverlay");
-
-  if (overlay) {
-    overlay.addEventListener("click", event => {
-      if (event.target === overlay) {
-        closeContactConfirmation();
-      }
-    });
-  }
-
-  loadDonors();
-});
-</script>
 
 <div id="contactConfirmOverlay"
      class="contact-confirm-overlay"
      role="dialog"
      aria-modal="true"
      aria-labelledby="contactConfirmTitle"
-     aria-describedby="contactConfirmDescription">
+     aria-describedby="contactConfirmDescription"
+     aria-hidden="true">
 
-  <div class="contact-confirm-modal">
+  <div class="contact-confirm-modal" role="document">
     <div class="contact-confirm-icon" aria-hidden="true">🩸</div>
 
     <h2 id="contactConfirmTitle" class="contact-confirm-title">
-      Please Read Before Contacting
-      <br>
-      يرجى القراءة قبل التواصل
+      Before Contacting the Donor
+      <span dir="rtl">قبل التواصل مع المتبرع</span>
     </h2>
 
     <div id="contactConfirmDescription">
       <p class="contact-confirm-text">
-        Please contact this donor
-        <strong>only when there is a genuine need for blood donation.</strong>
-        This platform is intended exclusively for humanitarian purposes.
+        This person shared their phone number with
+        <strong>My Blood Is Yours</strong>
+        to help in genuine blood donation cases.
       </p>
 
-      <p class="contact-confirm-text ar" dir="rtl">
-        يرجى التواصل مع هذا المتبرع
-        <strong>فقط عند وجود حاجة حقيقية للتبرع بالدم.</strong>
-        هذه المنصة مخصصة للأغراض الإنسانية فقط.
+      <p class="contact-confirm-warning">
+        Please contact this donor
+        <strong>only when there is a real need for blood donation.</strong>
+      </p>
+
+      <div class="contact-confirm-ar" dir="rtl">
+        <p>
+          قام هذا الشخص بإضافة رقم هاتفه إلى مبادرة
+          <strong>دمنا واحد</strong>
+          للمساعدة في حالات الحاجة إلى التبرع بالدم.
+        </p>
+
+        <p class="contact-confirm-warning">
+          <strong>
+            يرجى عدم التواصل معه إلا عند وجود حاجة فعلية للتبرع بالدم.
+          </strong>
+        </p>
+      </div>
+
+      <p class="contact-confirm-thanks">
+        Thank you for respecting our volunteer donors.
+        <span dir="rtl">شكرًا لاحترامكم وقت وجهد متبرعينا المتطوعين.</span>
       </p>
     </div>
 
     <div class="contact-confirm-actions">
       <button type="button"
-              class="btn contact-confirm-cancel"
+              class="contact-confirm-button contact-confirm-cancel"
               onclick="closeContactConfirmation()">
-        Cancel | إلغاء
+        Cancel
+        <span dir="rtl">إلغاء</span>
       </button>
 
       <button type="button"
-              class="btn contact-confirm-continue"
+              class="contact-confirm-button contact-confirm-continue"
               onclick="continueContactAction()">
         I Understand, Continue
-        <br>
-        أفهم ذلك، متابعة
+        <span dir="rtl">أفهم ذلك، متابعة</span>
       </button>
     </div>
   </div>
 </div>
+
 <script>
 const DONORS_PER_PAGE = 50;
 
-const params =
-  new URLSearchParams(window.location.search);
-
-const region =
-  params.get("region") || "AlBekaa";
-
-const town =
-  params.get("town") || "Al Marj";
-
-const blood =
-  params.get("blood") || "A+";
+const params = new URLSearchParams(window.location.search);
+const region = params.get("region") || "AlBekaa";
+const town = params.get("town") || "Al Marj";
+const blood = params.get("blood") || "A+";
 
 let donors = [];
 let displayedCount = 0;
@@ -629,18 +254,18 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 function initializeResultsPage() {
-  document.getElementById("bloodType").textContent =
-    "Blood Type: " + blood;
+  const bloodTypeElement = document.getElementById("bloodType");
+  const townNameElement = document.getElementById("townName");
+  const overlay = document.getElementById("contactConfirmOverlay");
 
-  document.getElementById("townName").textContent =
-    "Town: " + (
-      town === "Lala"
-        ? "Lala & Kafraiya"
-        : town
-    );
+  if (bloodTypeElement) {
+    bloodTypeElement.textContent = "Blood Type: " + blood;
+  }
 
-  const overlay =
-    document.getElementById("contactConfirmOverlay");
+  if (townNameElement) {
+    townNameElement.textContent =
+      "Town: " + (town === "Lala" ? "Lala & Kafraiya" : town);
+  }
 
   if (overlay) {
     overlay.addEventListener("click", event => {
@@ -660,52 +285,55 @@ function initializeResultsPage() {
 }
 
 async function loadDonors() {
-  const loading =
-    document.getElementById("loading");
+  const loading = document.getElementById("loading");
+  const error = document.getElementById("error");
 
-  const error =
-    document.getElementById("error");
+  if (loading) {
+    loading.innerHTML = `
+      <span class="spinner"></span>
+      Loading donors... جاري تحميل المتبرعين
+    `;
+    loading.style.display = "flex";
+  }
 
-  loading.innerHTML = `
-    <span class="spinner"></span>
-    Loading donors... جاري تحميل المتبرعين
-  `;
-
-  loading.style.display = "flex";
-  error.style.display = "none";
+  if (error) {
+    error.style.display = "none";
+  }
 
   try {
-    const persons =
-      await MyBloodApp.getPersons();
+    const persons = await MyBloodApp.getPersons();
 
-    loading.style.display = "none";
+    if (loading) {
+      loading.style.display = "none";
+    }
 
     if (!persons) {
       showEmpty();
       return;
     }
 
-    donors =
-      MyBloodApp.shuffle(
-        Object.entries(persons)
-          .map(([id, person]) => ({
-            id,
-            ...person
-          }))
-          .filter(person =>
-            MyBloodApp.normalizeText(person.Location) ===
-              MyBloodApp.normalizeText(town) &&
-            MyBloodApp.normalizeText(person.BloodType) ===
-              MyBloodApp.normalizeText(blood)
-          )
-      );
+    donors = MyBloodApp.shuffle(
+      Object.entries(persons)
+        .map(([id, person]) => ({ id, ...person }))
+        .filter(person =>
+          MyBloodApp.normalizeText(person.Location) ===
+            MyBloodApp.normalizeText(town) &&
+          MyBloodApp.normalizeText(person.BloodType) ===
+            MyBloodApp.normalizeText(blood)
+        )
+    );
 
     displayedCount = 0;
 
-    document.getElementById("donorList").innerHTML = "";
+    const list = document.getElementById("donorList");
+    if (list) {
+      list.innerHTML = "";
+    }
 
-    document.getElementById("count").textContent =
-      donors.length + " donor(s) found";
+    const count = document.getElementById("count");
+    if (count) {
+      count.textContent = donors.length + " donor(s) found";
+    }
 
     if (!donors.length) {
       showEmpty();
@@ -714,93 +342,75 @@ async function loadDonors() {
 
     renderNextDonors();
   } catch (loadError) {
-    loading.style.display = "none";
-    error.style.display = "block";
+    if (loading) {
+      loading.style.display = "none";
+    }
 
-    error.innerHTML = `
-      Unable to load donors.<br>
-      تعذر تحميل المتبرعين.
-      <br><small>
-        ${MyBloodApp.escapeHtml(loadError.message)}
-      </small>
-      <br>
-      <button
-        class="btn btn-secondary retry-button"
-        onclick="loadDonors()">
-        Retry | إعادة المحاولة
-      </button>
-    `;
+    if (error) {
+      error.style.display = "block";
+      error.innerHTML = `
+        Unable to load donors.<br>
+        تعذر تحميل المتبرعين.
+        <br>
+        <small>${MyBloodApp.escapeHtml(loadError.message)}</small>
+        <br>
+        <button
+          class="btn btn-secondary retry-button"
+          onclick="loadDonors()">
+          Retry | إعادة المحاولة
+        </button>
+      `;
+    }
   }
 }
 
 function renderNextDonors() {
-  const list =
-    document.getElementById("donorList");
+  const list = document.getElementById("donorList");
 
-  const limit =
-    Math.min(
-      displayedCount + DONORS_PER_PAGE,
-      donors.length
-    );
+  if (!list) {
+    return;
+  }
 
-  for (
-    let index = displayedCount;
-    index < limit;
-    index++
-  ) {
-    const donor = donors[index];
+  const limit = Math.min(
+    displayedCount + DONORS_PER_PAGE,
+    donors.length
+  );
 
-    list.appendChild(
-      createDonorCard(donor)
-    );
+  for (let index = displayedCount; index < limit; index++) {
+    list.appendChild(createDonorCard(donors[index]));
   }
 
   displayedCount = limit;
-
   updateResultsProgress();
 }
 
 function createDonorCard(donor) {
-  const phone =
-    String(donor.PhoneNumber || "");
+  const phone = String(donor.PhoneNumber || "");
+  const whatsappPhone = MyBloodApp.normalizeLebanonPhone(phone);
 
-  const whatsappPhone =
-    MyBloodApp.normalizeLebanonPhone(phone);
-
-  const card =
-    document.createElement("article");
-
+  const card = document.createElement("article");
   card.className = "donor-card";
 
-  const initial =
-    MyBloodApp.escapeHtml(
-      String(donor.FullName || "D")
-        .trim()
-        .charAt(0)
-        .toUpperCase() || "D"
-    );
+  const initial = MyBloodApp.escapeHtml(
+    String(donor.FullName || "D")
+      .trim()
+      .charAt(0)
+      .toUpperCase() || "D"
+  );
 
   card.innerHTML = `
     <div class="donor-card-head">
-      <div class="donor-avatar">
-        ${initial}
-      </div>
+      <div class="donor-avatar">${initial}</div>
 
       <div class="donor-main">
         <h3 class="donor-name">
-          ${MyBloodApp.escapeHtml(
-            donor.FullName || "Donor"
-          )}
+          ${MyBloodApp.escapeHtml(donor.FullName || "Donor")}
         </h3>
 
         <div class="donor-meta">
-          ${MyBloodApp.escapeHtml(
-            donor.BloodType || blood
-          )}
+          ${MyBloodApp.escapeHtml(donor.BloodType || blood)}
           ·
-          ${MyBloodApp.escapeHtml(
-            donor.Location || town
-          )}
+          ${MyBloodApp.escapeHtml(donor.Location || town)}
         </div>
 
         <div class="donor-status">
@@ -817,6 +427,7 @@ function createDonorCard(donor) {
               class="action-btn call-btn"
               type="button"
               data-action="call"
+              data-phone="${MyBloodApp.escapeHtml(phone)}"
               data-destination="tel:${MyBloodApp.escapeHtml(phone)}">
               ☎ Call | اتصال
             </button>
@@ -825,6 +436,7 @@ function createDonorCard(donor) {
               class="action-btn whatsapp-btn"
               type="button"
               data-action="whatsapp"
+              data-phone="${MyBloodApp.escapeHtml(phone)}"
               data-destination="https://wa.me/${MyBloodApp.escapeHtml(whatsappPhone)}">
               ◉ WhatsApp | واتساب
             </button>
@@ -834,37 +446,41 @@ function createDonorCard(donor) {
     }
   `;
 
-  card
-    .querySelectorAll("[data-action]")
-    .forEach(button => {
-      button.addEventListener("click", () => {
-        pendingContact = {
-          action: button.dataset.action,
-          destination: button.dataset.destination
-        };
+  card.querySelectorAll("[data-action]").forEach(button => {
+    button.addEventListener("click", () => {
+      pendingContact = {
+        action: button.dataset.action,
+        destination: button.dataset.destination,
+        phone: button.dataset.phone
+      };
 
-        openContactConfirmation();
-      });
+      openContactConfirmation();
     });
+  });
 
   return card;
 }
 
 function updateResultsProgress() {
-  document.getElementById("resultsProgress").textContent =
-    "Showing " +
-    displayedCount +
-    " of " +
-    donors.length +
-    " donors | عرض " +
-    displayedCount +
-    " من " +
-    donors.length;
+  const progress = document.getElementById("resultsProgress");
+  const loadMoreWrap = document.getElementById("loadMoreWrap");
 
-  document.getElementById("loadMoreWrap").style.display =
-    displayedCount < donors.length
-      ? "flex"
-      : "none";
+  if (progress) {
+    progress.textContent =
+      "Showing " +
+      displayedCount +
+      " of " +
+      donors.length +
+      " donors | عرض " +
+      displayedCount +
+      " من " +
+      donors.length;
+  }
+
+  if (loadMoreWrap) {
+    loadMoreWrap.style.display =
+      displayedCount < donors.length ? "flex" : "none";
+  }
 }
 
 function loadMoreDonors() {
@@ -872,30 +488,39 @@ function loadMoreDonors() {
 }
 
 function showEmpty() {
-  document.getElementById("donorList").innerHTML = `
-    <div class="status">
-      No matching donors were found for
-      ${MyBloodApp.escapeHtml(blood)}
-      in
-      ${MyBloodApp.escapeHtml(town)}.
-      <br>
-      لم يتم العثور على متبرعين مطابقين حاليًا.
-    </div>
-  `;
+  const list = document.getElementById("donorList");
+  const count = document.getElementById("count");
+  const loadMoreWrap = document.getElementById("loadMoreWrap");
+  const progress = document.getElementById("resultsProgress");
 
-  document.getElementById("count").textContent =
-    "0 donor(s) found";
+  if (list) {
+    list.innerHTML = `
+      <div class="status">
+        No matching donors were found for
+        ${MyBloodApp.escapeHtml(blood)}
+        in
+        ${MyBloodApp.escapeHtml(town)}.
+        <br>
+        لم يتم العثور على متبرعين مطابقين حاليًا.
+      </div>
+    `;
+  }
 
-  document.getElementById("loadMoreWrap").style.display =
-    "none";
+  if (count) {
+    count.textContent = "0 donor(s) found";
+  }
 
-  document.getElementById("resultsProgress").textContent =
-    "";
+  if (loadMoreWrap) {
+    loadMoreWrap.style.display = "none";
+  }
+
+  if (progress) {
+    progress.textContent = "";
+  }
 }
 
 function openContactConfirmation() {
-  const overlay =
-    document.getElementById("contactConfirmOverlay");
+  const overlay = document.getElementById("contactConfirmOverlay");
 
   if (!overlay) {
     continueContactAction();
@@ -903,15 +528,23 @@ function openContactConfirmation() {
   }
 
   overlay.classList.add("is-open");
+  overlay.setAttribute("aria-hidden", "false");
   document.body.style.overflow = "hidden";
+
+  const continueButton =
+    overlay.querySelector(".contact-confirm-continue");
+
+  if (continueButton) {
+    continueButton.focus();
+  }
 }
 
 function closeContactConfirmation() {
-  const overlay =
-    document.getElementById("contactConfirmOverlay");
+  const overlay = document.getElementById("contactConfirmOverlay");
 
   if (overlay) {
     overlay.classList.remove("is-open");
+    overlay.setAttribute("aria-hidden", "true");
   }
 
   document.body.style.overflow = "";
@@ -923,36 +556,45 @@ function continueContactAction() {
     return;
   }
 
-  const {
-    action,
-    destination
-  } = pendingContact;
+  const currentContact = pendingContact;
+  pendingContact = null;
 
-  const overlay =
-    document.getElementById("contactConfirmOverlay");
+  const overlay = document.getElementById("contactConfirmOverlay");
 
   if (overlay) {
     overlay.classList.remove("is-open");
+    overlay.setAttribute("aria-hidden", "true");
   }
 
   document.body.style.overflow = "";
-  pendingContact = null;
 
-  if (action === "whatsapp") {
+  // Register the action in Firebase without blocking call or WhatsApp.
+  if (
+    window.MyBloodApp &&
+    typeof MyBloodApp.addOutgoingCall === "function"
+  ) {
+    MyBloodApp.addOutgoingCall(
+      currentContact.phone,
+      currentContact.action
+    ).catch(error => {
+      console.warn("Unable to register outgoing contact:", error);
+    });
+  }
+
+  if (currentContact.action === "whatsapp") {
     window.open(
-      destination,
+      currentContact.destination,
       "_blank",
       "noopener"
     );
     return;
   }
 
-  window.location.href = destination;
+  window.location.href = currentContact.destination;
 }
 
 function goBack() {
-  window.location.href =
-    "search-wizard.html";
+  window.location.href = "search-wizard.html";
 }
 </script>
 
