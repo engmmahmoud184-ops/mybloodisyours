@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "myblood-final-release-v1";
+const CACHE_NAME = "myblood-home-executive-director-v1";
 const APP_SHELL = [
   "./",
   "./index.html",

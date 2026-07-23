@@ -1645,3 +1645,39 @@ textarea:focus-visible{
     font-size:12px;
   }
 }
+
+
+/* ===== Homepage Leadership Block ===== */
+.homepage-leadership-card{
+  width:min(760px,100%);
+  margin:0 auto;
+  text-align:center;
+}
+
+.homepage-leadership-card h3{
+  margin:0 0 10px;
+  color:var(--navy);
+  font-size:clamp(24px,4vw,32px);
+  font-weight:1000;
+}
+
+.homepage-leadership-title{
+  margin:0;
+  color:var(--red-700);
+  font-size:18px;
+  line-height:1.6;
+  font-weight:950;
+}
+
+.homepage-leadership-ar{
+  margin-top:18px;
+  padding-top:18px;
+  border-top:1px solid var(--border);
+  color:var(--navy);
+}
+
+.homepage-leadership-ar p{
+  margin:6px 0;
+  font-size:18px;
+  line-height:1.6;
+}

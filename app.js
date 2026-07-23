@@ -94,6 +94,34 @@ window.MyBloodApp = (() => {
     };
   }
 
+
+  async function getAllCalls() {
+    return await request("/AllCalls.json");
+  }
+
+  async function addOutgoingCall(toPhone, channel = "call") {
+    const now = new Date();
+
+    return await request("/AllCalls.json", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        From: "",
+        To: String(toPhone || ""),
+        Channel: channel,
+        Year: now.getFullYear(),
+        Month: now.getMonth() + 1,
+        Day: now.getDate(),
+        Hour: now.getHours(),
+        Minute: now.getMinutes(),
+        Date: now.toISOString(),
+        Source: "WebsiteV3"
+      })
+    });
+  }
+
   function normalizeText(value) {
     return String(value || "")
       .trim()
@@ -189,6 +217,8 @@ window.MyBloodApp = (() => {
     addPerson,
     addContactRequest,
     getFirstAvailableNode,
+    getAllCalls,
+    addOutgoingCall,
     normalizeText,
     cleanPhone,
     isValidLebanonPhone,

@@ -426,26 +426,51 @@ function closeContactConfirmation() {
   pendingContactAction = null;
 }
 
-function continueContactAction() {
-  if (!pendingContactAction) {
+async function continueContactAction() {
+  if (!pendingContact) {
     return;
   }
 
-  const action = pendingContactAction.action;
-  const destination = pendingContactAction.destination;
+  const {
+    action,
+    destination
+  } = pendingContact;
 
-  document
-    .getElementById("contactConfirmOverlay")
-    .classList.remove("is-open");
+  const overlay =
+    document.getElementById("contactConfirmOverlay");
+
+  if (overlay) {
+    overlay.classList.remove("is-open");
+  }
 
   document.body.style.overflow = "";
-  pendingContactAction = null;
+  pendingContact = null;
+
+  const phoneNumber =
+    destination
+      .replace("tel:", "")
+      .replace("https://wa.me/", "");
+
+  try {
+    await MyBloodApp.addOutgoingCall(
+      phoneNumber,
+      action
+    );
+  } catch (error) {
+    // Do not block the humanitarian contact action if logging fails.
+    console.warn("Unable to register outgoing contact:", error);
+  }
 
   if (action === "whatsapp") {
-    window.open(destination, "_blank", "noopener");
-  } else {
-    window.location.href = destination;
+    window.open(
+      destination,
+      "_blank",
+      "noopener"
+    );
+    return;
   }
+
+  window.location.href = destination;
 }
 
 document.addEventListener("keydown", event => {

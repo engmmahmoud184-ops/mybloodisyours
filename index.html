@@ -95,11 +95,11 @@
     </div>
 
     <div class="v3-stat">
-      <div class="v3-stat-value">5,000+</div>
+      <div id="outgoingCallsCount" class="v3-stat-value">—</div>
       <div class="v3-stat-label">
-        Community Reach
+        Outgoing Calls
         <br>
-        الوصول المجتمعي
+        المكالمات الصادرة
       </div>
     </div>
   </div>
@@ -162,26 +162,76 @@
   </div>
 </section>
 
+
+<section class="v3-section">
+  <div class="v3-section-head">
+    <h2>Project Leadership | إدارة المشروع</h2>
+  </div>
+
+  <div class="v3-story-card homepage-leadership-card">
+    <h3>Eng. Mohamad Mahmoud</h3>
+
+    <p class="homepage-leadership-title">
+      Founder &amp; Executive Director – My Blood Is Yours
+    </p>
+
+    <div class="homepage-leadership-ar" dir="rtl">
+      <p><strong>المهندس محمد محمود</strong></p>
+      <p><strong>المؤسس والمدير التنفيذي – دمنا واحد</strong></p>
+    </div>
+  </div>
+</section>
+
 <footer class="v3-footer">
   <strong>My Blood Is Yours | دمنا واحد</strong>
-  <p>Founded by Eng. Mohamad Mahmoud</p>
+  <p>Led by Eng. Mohamad Mahmoud</p>
   <p>Blood donation is a gift of life. Thank you to every donor.</p>
   <p>© 2026 All Rights Reserved</p>
 </footer>
 
 <script>
+const OFFLINE_DONORS_COUNT = 5000;
+
 document.addEventListener("DOMContentLoaded", () => {
   loadDonorStatistics();
+  loadOutgoingCallsStatistics();
   loadSupporters();
 });
+
+
+async function loadOutgoingCallsStatistics() {
+  const callsElement =
+    document.getElementById("outgoingCallsCount");
+
+  if (!callsElement) {
+    return;
+  }
+
+  try {
+    const calls = await MyBloodApp.getAllCalls();
+
+    callsElement.textContent =
+      calls
+        ? Object.keys(calls).length.toLocaleString()
+        : "0";
+  } catch (error) {
+    callsElement.textContent = "—";
+    callsElement.title = error.message;
+  }
+}
 
 async function loadDonorStatistics() {
   const donorCount = document.getElementById("donorCount");
 
   try {
     const persons = await MyBloodApp.getPersons();
+    const onlineDonors = persons
+      ? Object.keys(persons).length
+      : 0;
+
     donorCount.textContent =
-      persons ? Object.keys(persons).length : "0";
+      (onlineDonors + OFFLINE_DONORS_COUNT)
+        .toLocaleString();
   } catch (error) {
     donorCount.textContent = "—";
     donorCount.title = error.message;
