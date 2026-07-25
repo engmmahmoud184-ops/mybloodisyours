@@ -5042,3 +5042,518 @@ textarea:focus-visible{
     height:92px;
   }
 }
+
+
+/* V8 — Firebase contributors image database */
+.home-v6 .v6-newsbar-label::after{
+  content:"Firebase";
+  position:absolute;
+  right:10px;
+  bottom:8px;
+  padding:3px 7px;
+  border:1px solid rgba(255,255,255,.24);
+  border-radius:999px;
+  color:rgba(255,255,255,.72);
+  font-size:9px;
+  font-weight:800;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+
+.home-v6 .v6-supporter-card{
+  cursor:default;
+}
+
+.home-v6 a.v6-supporter-card{
+  cursor:pointer;
+}
+
+
+/* =========================================================
+   V9 — SHORTER HERO + NON-BLOCKING CONTRIBUTORS LOADER
+   ========================================================= */
+
+.home-v6 .v7-hero-compact{
+  padding-top:24px;
+}
+
+.home-v6 .v7-hero-compact .v6-hero-grid{
+  min-height:330px;
+  grid-template-columns:1.1fr .9fr;
+}
+
+.home-v6 .v7-hero-compact h1{
+  max-width:590px;
+  font-size:clamp(38px,5vw,58px);
+  line-height:.96;
+}
+
+.home-v6 .v7-hero-compact .v6-hero-ar{
+  margin-top:11px;
+  font-size:clamp(19px,2.2vw,27px);
+}
+
+.home-v6 .v7-hero-compact .v6-hero-description{
+  margin-top:10px;
+  font-size:15px;
+}
+
+.home-v6 .v7-hero-compact .v6-actions{
+  margin-top:16px;
+}
+
+.home-v6 .v7-hero-compact .v6-trust{
+  margin-top:11px;
+}
+
+.home-v6 .v7-hero-compact .v6-hero-visual{
+  min-height:290px;
+}
+
+.home-v6 .v7-hero-compact .v6-large-flag{
+  width:195px;
+  height:117px;
+}
+
+.home-v6 .v7-hero-compact .v6-large-flag>div:nth-child(2){
+  font-size:40px;
+}
+
+.home-v6 .v7-hero-compact .v6-blood-drop{
+  width:160px;
+  height:210px;
+  margin-top:22px;
+}
+
+.home-v6 .v7-hero-compact .v6-blood-drop img{
+  width:88px;
+  height:88px;
+  border-radius:19px;
+}
+
+.home-v6 .v7-hero-compact .v6-drop-shine{
+  width:30px;
+  height:70px;
+  top:16px;
+  right:25px;
+}
+
+.home-v6 .v7-hero-compact .v6-lebanon-badge{
+  bottom:19px;
+  padding:10px 13px;
+}
+
+.home-v6 .v7-hero-compact .v6-lebanon-badge strong{
+  font-size:13px;
+}
+
+.home-v6 .v7-hero-compact .v6-lebanon-badge span{
+  font-size:12px;
+}
+
+.home-v6 .v6-stats article{
+  min-height:84px;
+  padding:13px 18px;
+}
+
+.home-v6 .v6-stats article>span{
+  width:42px;
+  height:42px;
+  flex-basis:42px;
+  font-size:19px;
+}
+
+.home-v6 .v6-stats strong{
+  font-size:21px;
+}
+
+.v9-contributors-error{
+  width:min(660px,100%);
+  min-height:118px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:18px;
+  color:var(--v6-muted);
+  text-align:center;
+}
+
+.v9-contributors-error strong{
+  color:var(--v6-navy);
+}
+
+.v9-contributors-error button{
+  margin-top:4px;
+  padding:9px 16px;
+  border:0;
+  border-radius:999px;
+  background:var(--v6-red);
+  color:#fff;
+  font-family:inherit;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.v9-contributors-error small{
+  max-width:600px;
+  color:#8995a5;
+  font-size:10px;
+  overflow-wrap:anywhere;
+}
+
+@media(max-width:680px){
+  .home-v6 .v7-hero-compact{
+    padding-top:22px;
+  }
+
+  .home-v6 .v7-hero-compact .v6-hero-grid{
+    min-height:auto;
+  }
+
+  .home-v6 .v7-hero-compact h1{
+    font-size:37px;
+  }
+
+  .home-v6 .v7-hero-compact .v6-hero-visual{
+    min-height:275px;
+  }
+}
+
+
+/* =========================================================
+   V10 — TOWNADSRESULTINFO CONTRIBUTORS
+   ========================================================= */
+
+.v10-contributor-details{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+}
+
+.v10-contributor-town{
+  max-width:155px;
+  overflow:hidden;
+  color:#8895a7;
+  font-size:10px;
+  font-weight:700;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.home-v6 .v6-supporter-card{
+  min-height:120px;
+}
+
+.home-v6 .v6-supporter-image{
+  height:70px;
+}
+
+
+/* Contributor tiers from Admin Panel */
+.homepage-contributor-tier{
+  display:inline-flex;
+  margin-top:3px;
+  padding:3px 7px;
+  border-radius:999px;
+  font-size:9px;
+  font-weight:1000;
+}
+
+.contributor-tier-gold .homepage-contributor-tier{
+  background:#fff1b8;
+  color:#876400;
+}
+
+.contributor-tier-silver .homepage-contributor-tier{
+  background:#e9edf1;
+  color:#59616d;
+}
+
+.contributor-tier-bronze .homepage-contributor-tier{
+  background:#f3dfcf;
+  color:#8b491f;
+}
+
+
+/* =========================================================
+   ADMIN PANEL CONTRIBUTORS — HOMEPAGE GOLD DISPLAY
+   ========================================================= */
+
+.homepage-gold-track{
+  min-height:170px;
+}
+
+.homepage-gold-contributor-card{
+  width:210px;
+  min-height:132px;
+  flex:0 0 210px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+  padding:14px;
+  border:1px solid #eadca3;
+  border-radius:20px;
+  background:
+    linear-gradient(145deg,#ffffff,#fffaf0);
+  color:var(--v6-navy);
+  text-decoration:none;
+  box-shadow:
+    0 12px 30px rgba(16,45,82,.07),
+    inset 0 3px 0 rgba(211,165,31,.34);
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease;
+}
+
+.homepage-gold-contributor-card:hover{
+  transform:translateY(-4px);
+  box-shadow:
+    0 18px 40px rgba(16,45,82,.12),
+    inset 0 3px 0 rgba(211,165,31,.55);
+}
+
+.homepage-gold-logo{
+  width:165px;
+  height:72px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+  border-radius:13px;
+  background:#fff;
+}
+
+.homepage-gold-logo img{
+  max-width:100%;
+  max-height:100%;
+  object-fit:contain;
+}
+
+.homepage-gold-logo-fallback{
+  width:58px;
+  height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:18px;
+  background:#fff3c4;
+  color:#8b6800;
+  font-size:26px;
+  font-weight:1000;
+}
+
+.homepage-gold-details{
+  width:100%;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:2px;
+  text-align:center;
+}
+
+.homepage-gold-details strong{
+  max-width:180px;
+  overflow:hidden;
+  color:var(--v6-navy);
+  font-size:13px;
+  font-weight:950;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.homepage-gold-details span{
+  max-width:180px;
+  overflow:hidden;
+  color:#768499;
+  font-size:11px;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.homepage-gold-badge{
+  display:inline-flex;
+  margin-top:4px;
+  padding:4px 9px;
+  border:1px solid #e3c75e;
+  border-radius:999px;
+  background:#fff2b8;
+  color:#846200;
+  font-size:9px;
+  font-weight:1000;
+}
+
+@media(max-width:680px){
+  .homepage-gold-contributor-card{
+    width:165px;
+    flex-basis:165px;
+  }
+
+  .homepage-gold-logo{
+    width:135px;
+    height:66px;
+  }
+}
+
+
+/* =========================================================
+   V4 FIX — GOLD CONTRIBUTORS DISPLAY
+   ========================================================= */
+
+.homepage-gold-static-grid{
+  width:100%;
+  min-height:170px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:18px;
+  padding:18px;
+}
+
+.homepage-contributors-error{
+  width:min(680px,100%);
+  min-height:130px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:20px;
+  color:#68778d;
+  text-align:center;
+}
+
+.homepage-contributors-error strong{
+  color:#102d52;
+}
+
+.homepage-contributors-error button{
+  margin-top:5px;
+  padding:9px 17px;
+  border:0;
+  border-radius:999px;
+  background:#d71932;
+  color:#fff;
+  font-family:inherit;
+  font-weight:900;
+  cursor:pointer;
+}
+
+.homepage-contributors-error small{
+  color:#8b96a5;
+  font-size:10px;
+}
+
+.homepage-gold-contributor-card.logo-loaded{
+  border-color:#dfc45c;
+}
+
+@media(max-width:680px){
+  .homepage-gold-static-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+  }
+
+  .homepage-gold-static-grid
+  .homepage-gold-contributor-card{
+    width:100%;
+    min-width:0;
+    flex-basis:auto;
+  }
+}
+
+
+/* =========================================================
+   V5 — SHOW ACTIVE GOLD CONTRIBUTORS ON HOME
+   ========================================================= */
+
+.homepage-gold-static-grid{
+  width:100%;
+  min-height:190px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  flex-wrap:wrap;
+  gap:22px;
+  padding:22px;
+}
+
+.homepage-gold-static-grid
+.homepage-gold-contributor-card{
+  width:260px;
+  min-height:155px;
+  flex-basis:260px;
+}
+
+.homepage-gold-static-grid
+.homepage-gold-logo{
+  width:205px;
+  height:88px;
+}
+
+.homepage-gold-static-grid
+.homepage-gold-details strong{
+  font-size:15px;
+}
+
+@media(max-width:680px){
+  .homepage-gold-static-grid{
+    grid-template-columns:1fr;
+  }
+
+  .homepage-gold-static-grid
+  .homepage-gold-contributor-card{
+    width:min(100%,280px);
+    margin-inline:auto;
+  }
+}
+
+
+/* =========================================================
+   RELEASE CANDIDATE RC1 — PUBLIC SUPPORTERS SECTION
+   ========================================================= */
+
+.v6-supporters .v6-heading > span{
+  color:#d71932;
+}
+
+.v6-supporters .v6-heading h2{
+  letter-spacing:-.02em;
+}
+
+.v6-newsbar-label strong{
+  font-size:17px;
+}
+
+.v6-newsbar-label small{
+  font-size:13px;
+}
+
+.homepage-gold-badge{
+  display:none;
+}
+
+.homepage-gold-contributor-card{
+  border-color:#e2e8ef;
+  background:#fff;
+  box-shadow:0 12px 30px rgba(16,45,82,.08);
+}
+
+.homepage-gold-contributor-card:hover{
+  border-color:#d71932;
+  box-shadow:0 18px 42px rgba(16,45,82,.13);
+}
+
+.homepage-gold-details strong{
+  font-size:14px;
+}
+
+.homepage-gold-details span{
+  margin-top:2px;
+}

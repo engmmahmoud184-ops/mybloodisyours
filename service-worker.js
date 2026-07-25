@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "myblood-homepage-v7-compact-supporters-v1";
+const CACHE_NAME = "myblood-rc1-final";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -39,11 +39,23 @@ self.addEventListener("activate", event => {
 
 self.addEventListener("fetch", event => {
   const request = event.request;
+  const url = new URL(request.url);
 
-  if (request.method !== "GET") return;
+  if (request.method !== "GET") {
+    return;
+  }
 
-  if (request.url.includes("firebaseio.com")) {
-    event.respondWith(fetch(request));
+  if (
+    request.url.includes("firebaseio.com") ||
+    url.pathname.endsWith("/supporters.js") ||
+    url.pathname.endsWith("/app.js") ||
+    url.pathname.endsWith("/styles.css") ||
+    url.pathname.endsWith("/index.html") ||
+    url.pathname === "/"
+  ) {
+    event.respondWith(
+      fetch(request, { cache: "no-store" })
+    );
     return;
   }
 
@@ -51,7 +63,11 @@ self.addEventListener("fetch", event => {
     fetch(request)
       .then(response => {
         const copy = response.clone();
-        caches.open(CACHE_NAME).then(cache => cache.put(request, copy));
+
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(request, copy);
+        });
+
         return response;
       })
       .catch(() => caches.match(request))

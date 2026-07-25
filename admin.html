@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin Panel | My Blood Is Yours</title>
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#102d52">
+
+  <link rel="icon" href="assets/logo-32.png">
+  <link rel="stylesheet" href="admin.css">
+
+  <script src="app.js" defer></script>
+  <script src="admin.js" defer></script>
+</head>
+
+<body class="admin-page">
+
+  <section id="loginView" class="admin-login-view">
+    <div class="admin-login-card">
+      <div class="admin-login-brand">
+        <img src="assets/logo.png" alt="My Blood Is Yours">
+        <div>
+          <strong>My Blood Is Yours</strong>
+          <span>Admin Panel | لوحة الإدارة</span>
+        </div>
+      </div>
+
+      <h1>Administrator Login</h1>
+      <p>Access contributor management.</p>
+
+      <form id="loginForm" class="admin-form">
+        <label>
+          Username
+          <input
+            id="loginUsername"
+            type="text"
+            autocomplete="username"
+            required>
+        </label>
+
+        <label>
+          Password
+          <input
+            id="loginPassword"
+            type="password"
+            autocomplete="current-password"
+            required>
+        </label>
+
+        <button class="admin-primary-button" type="submit">
+          Login | تسجيل الدخول
+        </button>
+
+        <div id="loginMessage" class="admin-message" aria-live="polite"></div>
+      </form>
+
+      <small class="admin-security-note">
+        This is a temporary static login. System Authentication is recommended before public production use.
+      </small>
+    </div>
+  </section>
+
+  <div id="dashboardView" class="admin-dashboard" hidden>
+    <aside class="admin-sidebar">
+      <a class="admin-sidebar-brand" href="index.html">
+        <img src="assets/logo-64.png" alt="">
+        <span>
+          <strong>My Blood Is Yours</strong>
+          <small>Administration</small>
+        </span>
+      </a>
+
+      <nav>
+        <button class="is-active" type="button">
+          <span>🤝</span>
+          Contributors
+        </button>
+      </nav>
+
+      <div class="admin-sidebar-footer">
+        <a href="index.html">← View Website</a>
+        <button type="button" onclick="adminLogout()">Logout</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <header class="admin-topbar">
+        <div>
+          <span>My Blood Is Yours</span>
+          <h1>Contributors Management</h1>
+          <p>Add, edit, rank, activate, or remove project contributors.</p>
+        </div>
+
+        <button
+          class="admin-primary-button"
+          type="button"
+          onclick="openContributorForm()">
+          + Add Contributor
+        </button>
+      </header>
+
+      <section class="admin-summary-grid">
+        <article>
+          <span>All</span>
+          <strong id="summaryTotal">0</strong>
+          <small>Total Contributors</small>
+        </article>
+
+        <article class="gold">
+          <span>Gold</span>
+          <strong id="summaryGold">0</strong>
+          <small>Gold Contributors</small>
+        </article>
+
+        <article class="silver">
+          <span>Silver</span>
+          <strong id="summarySilver">0</strong>
+          <small>Silver Contributors</small>
+        </article>
+
+        <article class="bronze">
+          <span>Bronze</span>
+          <strong id="summaryBronze">0</strong>
+          <small>Bronze Contributors</small>
+        </article>
+      </section>
+
+      <section class="admin-content-card">
+        <div class="admin-content-header">
+          <div>
+            <h2>Contributors</h2>
+            <p>Central contributors directory</p>
+          </div>
+
+          <div class="admin-filter-row">
+            <input
+              id="contributorsSearch"
+              type="search"
+              placeholder="Search company, region, or town">
+
+            <select id="tierFilter">
+              <option value="">All tiers</option>
+              <option value="GOLD">Gold</option>
+              <option value="SILVER">Silver</option>
+              <option value="BRONZE">Bronze</option>
+            </select>
+
+            <select id="scopeFilter">
+              <option value="">All scopes</option>
+              <option value="NATIONAL">National</option>
+              <option value="REGION">Region</option>
+              <option value="TOWN">Town</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="contributorsLoading" class="admin-loading">
+          Loading contributors...
+        </div>
+
+        <div id="contributorsEmpty" class="admin-empty" hidden>
+          <strong>No contributors yet.</strong>
+          <span>Add the first contributor using the button above.</span>
+        </div>
+
+        <div id="contributorsGrid" class="admin-contributors-grid"></div>
+      </section>
+    </main>
+  </div>
+
+  <div
+    id="contributorModal"
+    class="admin-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="contributorModalTitle"
+    hidden>
+
+    <div class="admin-modal-card">
+      <div class="admin-modal-header">
+        <div>
+          <span>Contributors Directory</span>
+          <h2 id="contributorModalTitle">Add Contributor</h2>
+        </div>
+
+        <button
+          class="admin-icon-button"
+          type="button"
+          onclick="closeContributorForm()"
+          aria-label="Close">
+          ×
+        </button>
+      </div>
+
+      <form id="contributorForm" class="admin-contributor-form">
+        <input id="contributorId" type="hidden">
+
+        <div class="admin-form-grid">
+          <label>
+            Company Name *
+            <input id="companyName" type="text" required>
+          </label>
+
+          <label>
+            اسم الشركة
+            <input id="companyNameAr" type="text" dir="rtl">
+          </label>
+
+          <label>
+            Tier *
+            <select id="tier" required>
+              <option value="GOLD">Gold | ذهبي</option>
+              <option value="SILVER">Silver | فضي</option>
+              <option value="BRONZE">Bronze | برونزي</option>
+            </select>
+          </label>
+
+          <label>
+            Contribution Scope *
+            <select id="contributionScope" required>
+              <option value="NATIONAL">National | مستوى التطبيق</option>
+              <option value="REGION">Region | مستوى المنطقة</option>
+              <option value="TOWN">Town | مستوى البلدة</option>
+            </select>
+          </label>
+
+          <label id="regionCodeField" hidden>
+            Region Code *
+            <select id="regionCode">
+              <option value="">Select region</option>
+              <option value="AAKKAR">Aakkar</option>
+              <option value="NORTH_LEBANON">North Lebanon</option>
+              <option value="BEIRUT">Beirut</option>
+              <option value="MOUNT_LEBANON">Mount Lebanon</option>
+              <option value="ALBEKAA">Bekaa</option>
+              <option value="BAALBEK_HERMEL">Baalbek-Hermel</option>
+              <option value="NABATIEH">Nabatieh</option>
+              <option value="SOUTH_LEBANON">South Lebanon</option>
+            </select>
+          </label>
+
+          <label id="regionNameField" hidden>
+            Region Name
+            <input id="regionName" type="text">
+          </label>
+
+          <label id="townCodeField" hidden>
+            Town Code *
+            <input id="townCode" type="text" placeholder="Example: ALMARJ">
+          </label>
+
+          <label id="townNameField" hidden>
+            Town Name *
+            <input id="townName" type="text" placeholder="Example: Al Marj">
+          </label>
+
+          <label class="admin-full-width">
+            Upload Contributor Logo *
+            <input
+              id="logoFile"
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/gif">
+            <small class="admin-field-help">
+              PNG, JPG, WEBP, or GIF. The image will be resized and compressed before saving.
+            </small>
+          </label>
+
+          <label class="admin-full-width">
+            Or use an external Logo URL
+            <input
+              id="logoUrl"
+              type="url"
+              placeholder="https://example.com/logo.png">
+            <small class="admin-field-help">
+              Leave this empty when uploading an image from your device.
+            </small>
+          </label>
+
+          <input id="logoData" type="hidden">
+
+          <div class="admin-logo-preview admin-full-width">
+            <span>Logo Preview</span>
+            <div>
+              <img id="logoPreview" alt="Logo preview">
+              <em id="logoPreviewPlaceholder">No image selected</em>
+            </div>
+            <small id="logoSizeInfo" class="admin-field-help"></small>
+          </div>
+
+          <label class="admin-full-width">
+            Website URL
+            <input
+              id="websiteUrl"
+              type="url"
+              placeholder="https://example.com">
+          </label>
+
+          <label>
+            Display Order
+            <input id="displayOrder" type="number" min="0" value="1">
+          </label>
+
+          <label>
+            Contribution Type
+            <select id="contributionType">
+              <option value="FINANCIAL">Financial</option>
+              <option value="MEDIA">Media</option>
+              <option value="TECHNICAL">Technical</option>
+              <option value="MEDICAL">Medical</option>
+              <option value="LOGISTICS">Logistics</option>
+              <option value="VENUE">Venue</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </label>
+
+          <label class="admin-checkbox-label">
+            <input id="isActive" type="checkbox" checked>
+            Active
+          </label>
+
+          <label class="admin-checkbox-label">
+            <input id="showOnHomepage" type="checkbox" checked>
+            Show on Homepage
+          </label>
+
+          <label class="admin-checkbox-label">
+            <input id="showOnRegionPages" type="checkbox" checked>
+            Show on Region Pages
+          </label>
+
+          <label class="admin-checkbox-label">
+            <input id="showOnTownPages" type="checkbox" checked>
+            Show on Town Pages
+          </label>
+
+          <label class="admin-full-width">
+            Notes
+            <textarea id="notes" rows="3"></textarea>
+          </label>
+        </div>
+
+        <div id="contributorFormMessage" class="admin-message"></div>
+
+        <div class="admin-modal-actions">
+          <button
+            class="admin-secondary-button"
+            type="button"
+            onclick="closeContributorForm()">
+            Cancel
+          </button>
+
+          <button
+            id="saveContributorButton"
+            class="admin-primary-button"
+            type="submit">
+            Save Contributor
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="adminToast" class="admin-toast" role="status" hidden></div>
+</body>
+</html>

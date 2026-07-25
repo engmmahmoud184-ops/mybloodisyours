@@ -1,203 +1,160 @@
 (function () {
   "use strict";
 
-  /*
-   * These were the supporters shown successfully in the older project.
-   * They remain as a safe fallback when Firebase is unavailable or its
-   * node/field structure changes.
-   */
-  const LEGACY_SUPPORTERS = [
-    {
-      image: "https://cdn.shopify.com/s/files/1/0603/7621/9837/files/saab.jpg?v=1716886171",
-      link: "https://www.instagram.com/saabprinthouse",
-      name: "Saab Print House",
-      order: 1
-    },
-    {
-      image: "https://cdn.shopify.com/s/files/1/0603/7621/9837/files/caramello.jpg?v=1716886570",
-      link: "https://www.facebook.com/caramello86",
-      name: "Caramello",
-      order: 2
-    }
-  ];
+  const CONTRIBUTORS_PATH = "/Contributors.json";
 
-  const NODE_CANDIDATES = [
-    "/OurPartner.json",
-    "/OurPartners.json",
-    "/Partners.json",
-    "/Partner.json",
-    "/Supporters.json",
-    "/Supporter.json",
-    "/Sponsors.json",
-    "/Sponsor.json",
-    "/ourPartners.json",
-    "/partners.json",
-    "/supporters.json"
-  ];
-
-  function toArray(data) {
-    if (!data) return [];
-
-    if (Array.isArray(data)) {
-      return data.filter(Boolean);
-    }
-
-    if (typeof data === "object") {
-      return Object.entries(data).map(([id, value]) => {
-        if (value && typeof value === "object") {
-          return { id, ...value };
-        }
-
-        if (typeof value === "string") {
-          return { id, image: value };
-        }
-
-        return { id };
-      });
-    }
-
-    return [];
-  }
-
-  function pick(item, keys) {
-    for (const key of keys) {
-      const value = item && item[key];
-
+  function getValue(item, names, fallback = "") {
+    for (const name of names) {
       if (
-        value !== undefined &&
-        value !== null &&
-        String(value).trim() !== ""
+        item &&
+        Object.prototype.hasOwnProperty.call(item, name) &&
+        item[name] !== undefined &&
+        item[name] !== null &&
+        String(item[name]).trim() !== ""
       ) {
-        return value;
+        return item[name];
       }
     }
 
-    return "";
+    return fallback;
   }
 
-  function normalize(item) {
-    const orderValue = Number(pick(item, [
-      "Order", "order", "Priority", "priority",
-      "Position", "position", "Index", "index"
-    ]));
+  function toBoolean(value, fallback = true) {
+    if (value === undefined || value === null || value === "") {
+      return fallback;
+    }
 
-    const activeValue = pick(item, [
-      "Active", "active", "Enabled", "enabled", "Visible", "visible"
-    ]);
+    return (
+      value === true ||
+      value === 1 ||
+      String(value).trim().toLowerCase() === "true"
+    );
+  }
 
-    const isActive =
-      activeValue === "" ||
-      activeValue === true ||
-      activeValue === 1 ||
-      String(activeValue).toLowerCase() === "true";
-
+  function normalizeContributor(id, item) {
     return {
-      image: String(pick(item, [
-        "Image", "image", "ImageUrl", "imageUrl",
-        "ImageURL", "Photo", "photo", "PhotoUrl",
-        "Logo", "logo", "LogoUrl", "logoUrl",
-        "Url", "url", "src", "Source"
-      ]) || "").trim(),
+      id,
 
-      name: String(pick(item, [
-        "Name", "name", "Title", "title",
-        "Company", "company", "PartnerName", "partnerName"
-      ]) || "Supporter").trim(),
+      CompanyName: String(getValue(item, [
+        "CompanyName",
+        "companyName",
+        "Name",
+        "name"
+      ], "Golden Contributor")).trim(),
 
-      link: String(pick(item, [
-        "Website", "website", "WebSite",
-        "Link", "link", "Target", "target",
-        "Facebook", "facebook", "Instagram", "instagram"
-      ]) || "").trim(),
+      CompanyNameAr: String(getValue(item, [
+        "CompanyNameAr",
+        "companyNameAr",
+        "NameAr",
+        "nameAr"
+      ])).trim(),
 
-      order: Number.isFinite(orderValue) ? orderValue : 9999,
-      active: isActive
+      Tier: String(getValue(item, [
+        "Tier",
+        "tier"
+      ])).trim().toUpperCase(),
+
+      IsActive: toBoolean(getValue(item, [
+        "IsActive",
+        "isActive",
+        "Active",
+        "active"
+      ], true), true),
+
+      DisplayOrder: Number(getValue(item, [
+        "DisplayOrder",
+        "displayOrder",
+        "Order",
+        "order"
+      ], 9999)),
+
+      WebsiteUrl: String(getValue(item, [
+        "WebsiteUrl",
+        "websiteUrl",
+        "Website",
+        "website",
+        "Link",
+        "link"
+      ])).trim(),
+
+      LogoUrl: String(getValue(item, [
+        "LogoUrl",
+        "logoUrl",
+        "LogoURL",
+        "LogoData",
+        "logoData",
+        "ImageUrl",
+        "imageUrl",
+        "ImageLink",
+        "ImageSrc"
+      ])).trim()
     };
   }
 
-  function deduplicate(items) {
-    const seen = new Set();
+  async function loadGoldenContributors() {
+    const url =
+      MyBloodApp.FIREBASE_URL +
+      CONTRIBUTORS_PATH +
+      "?t=" +
+      Date.now();
 
-    return items.filter(item => {
-      const key = (item.image || "").trim().toLowerCase();
-
-      if (!key || seen.has(key)) {
-        return false;
+    const response = await fetch(url, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "Accept": "application/json"
       }
-
-      seen.add(key);
-      return true;
     });
-  }
 
-  async function readFirebaseSupporters() {
-    if (
-      !window.MyBloodApp ||
-      typeof MyBloodApp.request !== "function"
-    ) {
+    if (!response.ok) {
+      throw new Error(
+        "Firebase returned HTTP " + response.status
+      );
+    }
+
+    const data = await response.json();
+
+    if (!data || typeof data !== "object") {
       return [];
     }
 
-    for (const node of NODE_CANDIDATES) {
-      try {
-        const data = await MyBloodApp.request(node);
-
-        const supporters = toArray(data)
-          .map(normalize)
-          .filter(item => item.active && item.image);
-
-        if (supporters.length) {
-          console.info(
-            "Supporters loaded from Firebase node:",
-            node
-          );
-          return supporters;
+    const contributors = Object.entries(data)
+      .map(([id, item]) =>
+        normalizeContributor(id, item)
+      )
+      .filter(item => (
+        item.Tier === "GOLD" &&
+        item.IsActive === true &&
+        Boolean(item.LogoUrl)
+      ))
+      .sort((first, second) => {
+        if (first.DisplayOrder !== second.DisplayOrder) {
+          return first.DisplayOrder - second.DisplayOrder;
         }
-      } catch (error) {
-        console.warn(
-          "Unable to read supporters from:",
-          node,
-          error
+
+        return first.CompanyName.localeCompare(
+          second.CompanyName
         );
-      }
-    }
+      });
 
-    return [];
+    console.info(
+      "Active GOLD contributors shown on homepage:",
+      contributors
+    );
+
+    return contributors;
   }
 
-  function getLegacySupporters() {
-    const externalLegacy = Array.isArray(window.MY_BLOOD_SUPPORTERS)
-      ? window.MY_BLOOD_SUPPORTERS
-      : [];
-
-    return [...externalLegacy, ...LEGACY_SUPPORTERS]
-      .map(normalize)
-      .filter(item => item.active && item.image);
-  }
-
-  async function fetchSupporters() {
-    const firebaseSupporters = await readFirebaseSupporters();
-    const legacySupporters = getLegacySupporters();
-
-    /*
-     * Combine both sources. Firebase content appears first, while old
-     * supporters remain visible and guarantee the bar never becomes empty.
-     */
-    return deduplicate([
-      ...firebaseSupporters,
-      ...legacySupporters
-    ]);
-  }
-
-  function buildCard(item, isClone = false) {
-    const card = item.link
+  function createCard(item, isClone = false) {
+    const card = item.WebsiteUrl
       ? document.createElement("a")
       : document.createElement("article");
 
-    card.className = "v6-supporter-card";
+    card.className =
+      "homepage-gold-contributor-card";
 
-    if (item.link) {
-      card.href = item.link;
+    if (item.WebsiteUrl) {
+      card.href = item.WebsiteUrl;
       card.target = "_blank";
       card.rel = "noopener";
     }
@@ -207,114 +164,191 @@
       card.tabIndex = -1;
     }
 
-    const imageBox = document.createElement("div");
-    imageBox.className = "v6-supporter-image";
+    const logoBox =
+      document.createElement("div");
 
-    const image = document.createElement("img");
-    image.src = item.image;
-    image.alt = isClone ? "" : item.name;
+    logoBox.className =
+      "homepage-gold-logo";
+
+    const image =
+      document.createElement("img");
+
+    image.src = item.LogoUrl;
+    image.alt = isClone ? "" : item.CompanyName;
     image.loading = "eager";
     image.decoding = "async";
 
-    image.addEventListener("error", () => {
+    image.onload = () => {
+      card.classList.add("logo-loaded");
+    };
+
+    image.onerror = () => {
+      console.error(
+        "Unable to display logo for:",
+        item.CompanyName
+      );
+
       image.remove();
 
-      const fallback = document.createElement("span");
-      fallback.className = "v6-supporter-fallback";
+      const fallback =
+        document.createElement("span");
+
+      fallback.className =
+        "homepage-gold-logo-fallback";
+
       fallback.textContent =
-        (item.name || "S")
-          .trim()
+        item.CompanyName
           .charAt(0)
           .toUpperCase();
 
-      imageBox.appendChild(fallback);
-    });
+      logoBox.appendChild(fallback);
+    };
 
-    imageBox.appendChild(image);
+    logoBox.appendChild(image);
 
-    if (item.name && item.name !== "Supporter") {
-      const name = document.createElement("span");
-      name.className = "v6-supporter-name";
-      name.textContent = item.name;
-      card.append(imageBox, name);
-    } else {
-      card.appendChild(imageBox);
+    const info =
+      document.createElement("div");
+
+    info.className =
+      "homepage-gold-details";
+
+    const company =
+      document.createElement("strong");
+
+    company.textContent =
+      item.CompanyName;
+
+    info.appendChild(company);
+
+    if (item.CompanyNameAr) {
+      const arabic =
+        document.createElement("span");
+
+      arabic.dir = "rtl";
+      arabic.textContent =
+        item.CompanyNameAr;
+
+      info.appendChild(arabic);
     }
+
+    const tier =
+      document.createElement("small");
+
+    tier.className =
+      "homepage-gold-badge";
+
+    tier.textContent =
+      "GOLD | ذهبي";
+
+    info.appendChild(tier);
+    card.append(logoBox, info);
 
     return card;
   }
 
-  function renderTrack(track, supporters) {
-    const ordered = [...supporters].sort(
-      (a, b) => a.order - b.order
-    );
-
-    track.className = "v6-supporters-track";
+  function renderContributors(track, contributors) {
     track.innerHTML = "";
 
-    ordered.forEach(item => {
-      track.appendChild(buildCard(item));
+    if (contributors.length <= 3) {
+      track.className =
+        "homepage-gold-static-grid";
+
+      contributors.forEach(item => {
+        track.appendChild(createCard(item));
+      });
+
+      return;
+    }
+
+    track.className =
+      "v6-supporters-track homepage-gold-track";
+
+    contributors.forEach(item => {
+      track.appendChild(createCard(item));
     });
 
-    /*
-     * Repeat enough items for a seamless newsbar, even when Firebase
-     * currently contains only two supporters.
-     */
-    const repetitions = ordered.length < 4 ? 4 : 2;
-
-    for (let repeat = 1; repeat < repetitions; repeat++) {
-      ordered.forEach(item => {
-        track.appendChild(buildCard(item, true));
-      });
-    }
+    contributors.forEach(item => {
+      track.appendChild(createCard(item, true));
+    });
 
     track.classList.add("is-moving");
   }
 
   async function loadSupporters() {
-    const track = document.getElementById("supportersGrid");
+    const track =
+      document.getElementById("supportersGrid");
 
-    if (!track) return;
+    if (!track) {
+      return;
+    }
+
+    track.className =
+      "v6-supporters-track is-centered";
 
     track.innerHTML = `
       <div class="v6-supporters-loading">
         <span class="spinner"></span>
         Loading supporters...
-        <span dir="rtl">جاري تحميل الداعمين</span>
+        <span dir="rtl">
+          جاري تحميل الداعمين
+        </span>
       </div>
     `;
 
     try {
-      const supporters = await fetchSupporters();
+      const contributors =
+        await loadGoldenContributors();
 
-      if (!supporters.length) {
-        track.className = "v6-supporters-track is-centered";
+      if (!contributors.length) {
         track.innerHTML = `
           <div class="v6-supporters-empty">
-            <strong>Our supporter network is growing.</strong>
-            <span dir="rtl">نعمل باستمرار على توسيع شبكة الداعمين.</span>
+            <strong>
+              No active supporter is available yet.
+            </strong>
+
+            <span dir="rtl">
+              لا يوجد داعمون مفعّلون حاليًا.
+            </span>
           </div>
         `;
+
         return;
       }
 
-      renderTrack(track, supporters);
+      renderContributors(
+        track,
+        contributors
+      );
     } catch (error) {
-      console.error("Supporters loading error:", error);
+      console.error(
+        "Supporters display error:",
+        error
+      );
 
-      /*
-       * This should rarely happen because the legacy list is always
-       * available, but keep a clear UI fallback.
-       */
-      track.className = "v6-supporters-track is-centered";
       track.innerHTML = `
-        <div class="v6-supporters-empty">
-          <strong>Supporters could not be loaded right now.</strong>
-          <span dir="rtl">تعذر تحميل صور الداعمين حاليًا.</span>
+        <div class="homepage-contributors-error">
+          <strong>
+            Unable to load supporters.
+          </strong>
+
+          <span dir="rtl">
+            تعذر تحميل الداعمين.
+          </span>
+
+          <button
+            type="button"
+            onclick="loadSupporters()">
+            Retry | إعادة المحاولة
+          </button>
+
+          <small>
+            ${String(error.message || error)}
+          </small>
         </div>
       `;
     }
   }
 
-  window.loadSupporters = loadSupporters;
+  window.loadSupporters =
+    loadSupporters;
 })();
