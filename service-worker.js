@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "myblood-complete-modal-fix-v1";
+const CACHE_NAME = "myblood-homepage-v7-compact-supporters-v1";
 const APP_SHELL = [
   "./",
   "./index.html",
