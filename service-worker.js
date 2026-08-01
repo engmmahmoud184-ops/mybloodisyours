@@ -1,5 +1,5 @@
 
-const CACHE_NAME = "myblood-rc1-final";
+const CACHE_NAME = "myblood-rc4-privacy-policy";
 const APP_SHELL = [
   "./",
   "./index.html",
