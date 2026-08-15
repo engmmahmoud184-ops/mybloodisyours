@@ -8,8 +8,8 @@
   <meta name="theme-color" content="#0e223d">
   <link rel="icon" href="assets/logo-32.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css">
-  <script src="app.js" defer></script>
+  <link rel="stylesheet" href="styles.css?v=birthyear1">
+  <script src="app.js?v=birthyear1" defer></script>
   <link rel="canonical" href="https://mybloodisyours.com/add-yourself.html">
   <meta property="og:title" content="Become a Donor | My Blood Is Yours">
   <meta property="og:description" content="Register as a voluntary blood donor with My Blood Is Yours.">
@@ -41,9 +41,9 @@
     <h2>Become a Blood Donor</h2>
 
     <p>
-      Choose your region and town from the official lists, then add your information.
+      Enter your information, including your birth year, then choose your region and town.
       <br>
-      اختر المحافظة والبلدة من القوائم الرسمية ثم أضف معلوماتك.
+      أدخل معلوماتك وسنة الميلاد ثم اختر المحافظة والبلدة من القوائم الرسمية.
     </p>
   </div>
 
@@ -85,6 +85,29 @@
           Your number is used for Call and WhatsApp and is not displayed publicly.
           <br>
           يُستخدم الرقم للاتصال وواتساب ولا يظهر بشكل علني.
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="birthYear">
+          Birth Year | سنة الميلاد
+          <span class="required-mark">*</span>
+        </label>
+
+        <input
+          id="birthYear"
+          class="form-control"
+          type="number"
+          inputmode="numeric"
+          step="1"
+          placeholder="Example: 1986"
+          autocomplete="bday-year"
+          required>
+
+        <div class="form-help" id="birthYearHelp">
+          Donors must be between 18 and 60 years old.
+          <br>
+          يجب أن يكون عمر المتبرع بين 18 و60 سنة.
         </div>
       </div>
 
@@ -172,6 +195,7 @@ const REGIONS = [{"id": "beirut", "name_en": "Beirut", "name_ar": "بيروت", 
 
 document.addEventListener("DOMContentLoaded", () => {
   populateRegions();
+  configureBirthYear();
 
   document
     .getElementById("regionSelect")
@@ -183,6 +207,64 @@ document.addEventListener("DOMContentLoaded", () => {
 
   preselectFromUrl();
 });
+
+function configureBirthYear() {
+  const currentYear = new Date().getFullYear();
+  const minBirthYear = currentYear - 60;
+  const maxBirthYear = currentYear - 18;
+
+  const birthYearInput =
+    document.getElementById("birthYear");
+
+  const birthYearHelp =
+    document.getElementById("birthYearHelp");
+
+  birthYearInput.min = String(minBirthYear);
+  birthYearInput.max = String(maxBirthYear);
+
+  birthYearHelp.innerHTML =
+    `Accepted birth years: ${minBirthYear}–${maxBirthYear}.` +
+    "<br>" +
+    `سنوات الميلاد المقبولة: ${minBirthYear}–${maxBirthYear}.`;
+}
+
+function validateBirthYear(value) {
+  const currentYear = new Date().getFullYear();
+  const minBirthYear = currentYear - 60;
+  const maxBirthYear = currentYear - 18;
+
+  const birthYear = Number(value);
+
+  if (
+    !Number.isInteger(birthYear) ||
+    String(Math.abs(birthYear)).length !== 4
+  ) {
+    return {
+      valid: false,
+      message:
+        "Please enter a valid 4-digit birth year. " +
+        "يرجى إدخال سنة ميلاد صحيحة من 4 أرقام."
+    };
+  }
+
+  if (
+    birthYear < minBirthYear ||
+    birthYear > maxBirthYear
+  ) {
+    return {
+      valid: false,
+      message:
+        `Only donors aged 18 to 60 can register. ` +
+        `Birth year must be between ${minBirthYear} and ${maxBirthYear}. ` +
+        `يسمح بالتسجيل فقط لمن أعمارهم بين 18 و60 سنة.`
+    };
+  }
+
+  return {
+    valid: true,
+    birthYear
+  };
+}
 
 function populateRegions() {
   const regionSelect =
@@ -280,6 +362,12 @@ async function submitDonor(event) {
       document.getElementById("phoneNumber").value
     );
 
+  const birthYearValue =
+    document.getElementById("birthYear").value.trim();
+
+  const birthYearValidation =
+    validateBirthYear(birthYearValue);
+
   const bloodType =
     document.getElementById("bloodType").value;
 
@@ -316,6 +404,20 @@ async function submitDonor(event) {
       "error",
       "Please enter a valid phone number. يرجى إدخال رقم هاتف صحيح."
     );
+    return;
+  }
+
+  if (!birthYearValidation.valid) {
+    MyBloodApp.showMessage(
+      status,
+      "error",
+      birthYearValidation.message
+    );
+
+    document
+      .getElementById("birthYear")
+      .focus();
+
     return;
   }
 
@@ -357,6 +459,7 @@ async function submitDonor(event) {
       FullName: fullName,
       PhoneNumber: phoneNumber,
       BloodType: bloodType,
+      BirthYear: birthYearValidation.birthYear,
 
       // Exact values used by donor search:
       Location: townKey,
