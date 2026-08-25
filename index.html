@@ -1,109 +1,468 @@
-<!doctype html>
-<html lang="ar" dir="rtl">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#146b4a">
-  <link rel="icon" href="assets/anabadelogo.jpeg" type="image/jpeg">
-  <meta name="description" content="اعثر بسرعة على الخدمات المحلية في بلدتك في لبنان.">
-  <title>أنا بدي | Ana Bade</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Blood Is Yours | دمنا واحد</title>
+  <meta name="description" content="A humanitarian platform connecting blood donors with patients across Lebanon.">
+  <meta name="theme-color" content="#102d52">
+
+  <link rel="icon" href="assets/logo-32.png">
+  <link rel="apple-touch-icon" href="assets/logo-192.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="css/styles.css">
-  <link rel="stylesheet" href="css/redesign.css?v=5.0">
-  <style id="homepage-critical">
-    .live-stats{display:grid!important;grid-template-columns:1.25fr 1fr 1fr!important;gap:.8rem!important;margin:0 0 1.5rem!important}.live-stats-intro,.live-stats article{display:flex!important;min-height:5.6rem!important;padding:1rem 1.15rem!important;align-items:center!important;gap:.85rem!important;background:#fff!important;border:1px solid #dce8e0!important;border-radius:1rem!important}.live-stats-intro{color:#fff!important;background:linear-gradient(135deg,#034b33,#087a3f)!important}.live-stats-intro div,.live-stats article div{display:flex!important;flex-direction:column!important}.live-stats article strong{color:#034b33!important;font-size:clamp(1.35rem,3vw,1.85rem)!important}
-    .popular-services{margin:0 0 3.5rem!important;padding:clamp(1.35rem,4vw,2.2rem)!important;background:linear-gradient(145deg,#f0f8f2,#fff)!important;border:1px solid #d6e8dc!important;border-radius:1.5rem!important;box-shadow:0 1rem 2.8rem rgba(3,75,51,.07)!important}
-    .popular-services .section-intro{display:flex!important;align-items:end!important;justify-content:space-between!important;gap:2rem!important;margin-bottom:1.4rem!important}
-    .service-shortcuts{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:1.1rem!important;width:100%!important}
-    .service-shortcuts>a{display:grid!important;grid-template-columns:3.7rem minmax(0,1fr)!important;grid-template-rows:auto auto auto!important;column-gap:.9rem!important;min-height:9.2rem!important;padding:1.15rem!important;align-items:center!important;text-align:right!important;text-decoration:none!important;color:#082f25!important;background:#fff!important;border:1px solid #d6e7dc!important;border-radius:1.15rem!important;box-shadow:0 .5rem 1.35rem rgba(3,75,51,.06)!important}
-    .service-shortcuts>a>span{display:grid!important;grid-row:1/4!important;width:3.7rem!important;height:3.7rem!important;place-items:center!important;font-size:1.8rem!important;background:#eaf6ee!important;border-radius:1rem!important}
-    .service-shortcuts>a>strong{display:block!important;align-self:end!important;font-size:1.08rem!important;text-decoration:none!important}.service-shortcuts>a>small{display:block!important;align-self:start!important;margin-top:.15rem!important;color:#5d7169!important;text-decoration:none!important}.service-shortcuts>a::after{content:"اختار منطقتك  ←"!important;grid-column:2!important;align-self:end!important;margin-top:.55rem!important;color:#087a3f!important;font-size:.76rem!important;font-weight:800!important;text-decoration:none!important}
-    .how-it-works{display:grid!important;grid-template-columns:.85fr 1.15fr!important;gap:clamp(2rem,6vw,5rem)!important;margin-bottom:2rem!important;padding:clamp(1.5rem,5vw,3.5rem)!important;color:#fff!important;background:linear-gradient(135deg,#032f23,#034b33)!important;border-radius:1.5rem!important}.steps-list{display:grid!important;gap:.8rem!important;list-style:none!important}.trust-strip{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:.8rem!important}.provider-invite{display:grid!important;grid-template-columns:3.8rem 1fr auto!important;gap:1.2rem!important;align-items:center!important}
-    @media(max-width:60rem){.service-shortcuts{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
-    @media(max-width:48rem){.live-stats{grid-template-columns:1fr 1fr!important}.live-stats-intro{grid-column:1/-1!important}.popular-services .section-intro{align-items:start!important;flex-direction:column!important;gap:.45rem!important}.how-it-works{grid-template-columns:1fr!important}.trust-strip{grid-template-columns:1fr!important}}
-    @media(max-width:34rem){.popular-services{padding:1.1rem!important;border-radius:1rem!important}.service-shortcuts{grid-template-columns:1fr!important;gap:.8rem!important}.provider-invite{grid-template-columns:3.2rem 1fr!important}.provider-invite>a{grid-column:1/-1!important}}
-  </style>
+  <link rel="stylesheet" href="styles.css?v=profile3">
+
+  <script src="app.js?v=rc1" defer></script>
+  <script src="supporters.js?v=rc1" defer></script>
+
+  <link rel="canonical" href="https://mybloodisyours.com/">
+  <meta property="og:title" content="My Blood Is Yours | دمنا واحد">
+  <meta property="og:description" content="Connecting blood donors with those who need them across Lebanon.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://mybloodisyours.com/">
+  <meta property="og:image" content="https://mybloodisyours.com/assets/logo-512.png">
 </head>
-<body>
-  <main class="site-shell">
-    <header class="site-header">
-      <a class="brand" href="index.html" aria-label="أنا بدي - الصفحة الرئيسية">
-        <span class="brand-mark" aria-hidden="true">أ</span>
-        <span class="brand-name">أنا بدي <small lang="en">Ana Bade</small></span>
+
+<body class="home-v6">
+<a class="skip-link" href="#mainContent">Skip to content</a>
+
+<header class="v6-nav">
+  <a class="v6-brand" href="index.html">
+    <img src="assets/logo-64.png" alt="My Blood Is Yours logo">
+    <span>
+      <strong>My Blood Is Yours</strong>
+      <small>دمنا واحد</small>
+    </span>
+  </a>
+
+  <button class="v6-menu"
+          type="button"
+          aria-label="Open menu"
+          aria-expanded="false"
+          onclick="toggleV6Menu(this)">
+    ☰
+  </button>
+
+  <nav id="v6NavLinks" class="v6-nav-links">
+    <a href="#how">How It Works</a>
+    <a href="#coverage">Lebanon Coverage</a>
+    <a href="#supporters">Supporters</a>
+    <a href="about.html">About</a>
+    <a href="contact.html">Contact</a>
+    <a class="v6-nav-cta" href="search-wizard.html">Find Blood Donor</a>
+  </nav>
+</header>
+
+<main id="mainContent">
+
+  <section class="v6-hero v7-hero-compact">
+    <div class="v6-hero-light"></div>
+    <div class="v6-mountains"></div>
+
+    <div class="v6-shell v6-hero-grid">
+      <div class="v6-hero-copy">
+        <div class="v6-eyebrow">
+          <span class="v6-mini-flag"><i></i><b>🌲</b><i></i></span>
+          Serving All of Lebanon
+        </div>
+
+        <h1>
+          Connecting Donors.
+          <span>Saving Lives.</span>
+        </h1>
+
+        <p class="v6-hero-ar" dir="rtl">
+          نربط متبرعي الدم بمن هم في أمسّ الحاجة إليهم
+        </p>
+
+        <p class="v6-hero-description">
+          Find volunteer blood donors across Lebanon—fast and free.
+        </p>
+
+        <div class="v6-actions">
+          <a class="v6-btn v6-btn-primary" href="search-wizard.html">
+            🔍 Find Blood Donor
+          </a>
+
+          <a class="v6-btn v6-btn-white" href="add-yourself.html">
+            ♥ Register as Donor
+          </a>
+        </div>
+
+        <div class="v6-trust">
+          <span>✓ Fast</span>
+          <span>✓ Free</span>
+          <span>✓ Available on every device</span>
+        </div>
+      </div>
+
+      <div class="v6-hero-visual">
+        <div class="v6-large-flag" aria-label="Lebanese flag">
+          <div></div>
+          <div><span>🌲</span></div>
+          <div></div>
+        </div>
+
+        <div class="v6-blood-drop">
+          <span class="v6-drop-shine"></span>
+          <img src="assets/logo.png" alt="My Blood Is Yours">
+        </div>
+
+        <div class="v6-lebanon-badge">
+          <strong>All Across Lebanon</strong>
+          <span>في كل أنحاء لبنان</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="v6-shell v6-stats">
+      <article>
+        <span>👥</span>
+        <div>
+          <strong id="donorCount">—</strong>
+          <small>Registered Donors</small>
+          <em>متبرع مسجل</em>
+        </div>
+      </article>
+
+      <article>
+        <span>☎</span>
+        <div>
+          <strong id="outgoingCallsCount">—</strong>
+          <small>Outgoing Contacts</small>
+          <em>اتصال صادر</em>
+        </div>
+      </article>
+
+      <article>
+        <span>📍</span>
+        <div>
+          <strong>1,529+</strong>
+          <small>Towns Covered</small>
+          <em>بلدة ومنطقة</em>
+        </div>
+      </article>
+
+      <article>
+        <span>🩸</span>
+        <div>
+          <strong>8</strong>
+          <small>Blood Types</small>
+          <em>فئات الدم</em>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="how" class="v6-section v6-how">
+    <div class="v6-shell">
+      <div class="v6-heading">
+        <span>Simple. Fast. Humanitarian.</span>
+        <h2>How It Works</h2>
+        <p>Three clear steps can connect a patient with a volunteer donor.</p>
+      </div>
+
+      <div class="v6-steps">
+        <article>
+          <b>1</b>
+          <div>🔍</div>
+          <h3>Search</h3>
+          <p>Select the region, town, and required blood type.</p>
+          <p dir="rtl">اختر المنطقة والبلدة وفئة الدم المطلوبة.</p>
+        </article>
+
+        <article>
+          <b>2</b>
+          <div>☎️</div>
+          <h3>Contact</h3>
+          <p>Call or WhatsApp a matching volunteer donor.</p>
+          <p dir="rtl">اتصل أو تواصل مع المتبرع عبر واتساب.</p>
+        </article>
+
+        <article>
+          <b>3</b>
+          <div>❤️</div>
+          <h3>Save a Life</h3>
+          <p>Every minute can make a life-changing difference.</p>
+          <p dir="rtl">كل دقيقة قد تصنع فرقًا وتنقذ حياة.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section id="coverage" class="v6-section v6-coverage">
+    <div class="v6-shell v6-coverage-grid">
+
+      <div class="v6-coverage-copy">
+        <span class="v6-kicker">Lebanon Coverage</span>
+        <h2>We Are All Over <span>Lebanon</span></h2>
+
+        <p>
+          From Aakkar to the South, and from Beirut to Bekaa, the platform makes it easier to search for donors throughout Lebanon.
+        </p>
+
+        <p dir="rtl">
+          من عكار إلى الجنوب، ومن بيروت إلى البقاع، تساعد المنصة على البحث عن متبرعين في مختلف أنحاء لبنان.
+        </p>
+
+        <div class="v6-region-buttons">
+          <a href="aakkar.html">Aakkar</a>
+          <a href="north-lebanon.html">North</a>
+          <a href="beirut.html">Beirut</a>
+          <a href="mount-lebanon.html">Mount Lebanon</a>
+          <a href="albekaa.html">Bekaa</a>
+          <a href="baalback.html">Baalbek-Hermel</a>
+          <a href="nabtieh.html">Nabatieh</a>
+          <a href="south-lebanon.html">South</a>
+        </div>
+
+        <a class="v6-btn v6-btn-primary" href="search-wizard.html">
+          View All Areas
+        </a>
+      </div>
+
+      <div class="v6-map-card">
+        <div class="v6-map-card-head">
+          <div>
+            <strong>Lebanon Coverage Map</strong>
+            <span>خريطة التغطية في لبنان</span>
+          </div>
+
+          <div class="v6-map-count">
+            <strong>8</strong>
+            <span>Main Regions</span>
+          </div>
+        </div>
+
+        <div class="v6-map-stage">
+          <img
+            src="assets/lebanon-coverage-map.png"
+            alt="Map of Lebanon"
+            class="v6-lebanon-map-image">
+
+          <a class="v6-map-pin pin-aakkar" href="aakkar.html">
+            <i>1</i><span>Aakkar<small>عكار</small></span>
+          </a>
+
+          <a class="v6-map-pin pin-north" href="north-lebanon.html">
+            <i>2</i><span>North<small>الشمال</small></span>
+          </a>
+
+          <a class="v6-map-pin pin-beirut" href="beirut.html">
+            <i>3</i><span>Beirut<small>بيروت</small></span>
+          </a>
+
+          <a class="v6-map-pin pin-mount" href="mount-lebanon.html">
+            <i>4</i><span>Mount Lebanon<small>جبل لبنان</small></span>
+          </a>
+
+          <a class="v6-map-pin pin-bekaa" href="albekaa.html">
+            <i>5</i><span>Bekaa<small>البقاع</small></span>
+          </a>
+
+          <a class="v6-map-pin pin-baalbek" href="baalback.html">
+            <i>6</i><span>Baalbek-Hermel<small>بعلبك الهرمل</small></span>
+          </a>
+
+          <a class="v6-map-pin pin-nabatieh" href="nabtieh.html">
+            <i>7</i><span>Nabatieh<small>النبطية</small></span>
+          </a>
+
+          <a class="v6-map-pin pin-south" href="south-lebanon.html">
+            <i>8</i><span>South<small>الجنوب</small></span>
+          </a>
+        </div>
+
+        <div class="v6-map-bottom">
+          <span>📍</span>
+          <div>
+            <strong>Search by region, town, and blood type.</strong>
+            <small dir="rtl">ابحث حسب المنطقة والبلدة وفئة الدم.</small>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="v6-section v6-values">
+    <div class="v6-shell">
+      <div class="v6-heading">
+        <span>Why My Blood Is Yours?</span>
+        <h2>Designed Around Trust and Urgency</h2>
+      </div>
+
+      <div class="v6-value-grid">
+        <article><span>⚡</span><h3>Fast</h3><p>Search within seconds.</p></article>
+        <article><span>❤️</span><h3>Free</h3><p>No fees for patients or donors.</p></article>
+        <article><span>🤝</span><h3>Humanitarian</h3><p>Built to serve urgent human needs.</p></article>
+        <article><span>🛡️</span><h3>Clear</h3><p>Simple and direct contact flow.</p></article>
+        <article><span>🌐</span><h3>Accessible</h3><p>Mobile, tablet, and desktop.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <section class="v6-leadership">
+    <div class="v6-shell v6-leadership-grid">
+      <div class="v6-leadership-photo">
+        <img
+          src="assets/profile.png?v=3"
+          alt="Eng. Mohamad Mahmoud – Founder and Executive Director"
+          loading="lazy"
+          decoding="async"
+        >
+      </div>
+
+      <div class="v6-leadership-copy">
+        <span>Project Leadership</span>
+        <h2>Eng. Mohamad Mahmoud</h2>
+        <h3>Founder &amp; Executive Director – My Blood Is Yours</h3>
+        <p>
+          “Our mission is to make blood donors easier to reach when every second matters.”
+        </p>
+        <p dir="rtl">المؤسس والمدير التنفيذي – دمنا واحد</p>
+      </div>
+
+      <div class="v6-dedication" dir="rtl">
+        <span>صدقة جارية</span>
+        <strong>عن روح المرحومة إسعاف عمر درويش</strong>
+        <p>نسأل الله أن يجعل كل حياة تُنقذ عبر هذه المنصة في ميزان حسناتها.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="v6-cta">
+    <div class="v6-shell v6-cta-grid">
+      <div>
+        <span>كل قطرة دم قد تنقذ حياة</span>
+        <h2>Be Ready. Save a Life.</h2>
+      </div>
+
+      <a class="v6-btn v6-btn-white" href="add-yourself.html">
+        ♥ Become a Donor Today
       </a>
-      <div class="header-actions"><span class="header-note">كل خدمة ببلدتك</span><a class="header-cta" href="add-service.html">أضف خدمتك</a></div>
-    </header>
+    </div>
+  </section>
 
-    <section class="campaign-hero" aria-labelledby="page-title">
-      <img src="assets/anabadehero.jpeg" alt="أنا بدي، كل شي بدك ياه قريب منك في كل مناطق لبنان">
-      <div class="campaign-copy">
-        <div><p class="eyebrow">دليلك للخدمات المحلية في لبنان</p><h1 id="page-title">كل شي بدّك ياه… <em>قريب منك</em></h1><p>اختار منطقتك، لاقي الخدمة المناسبة، وتواصل مباشرة بسهولة.</p></div>
-        <div class="campaign-actions"><a class="hero-primary" href="#regions-title">ابدأ البحث</a><a class="hero-secondary" href="add-service.html">سجّل خدمتك</a></div>
+  <section id="supporters" class="v6-section v6-supporters">
+    <div class="v6-shell">
+      <div class="v6-heading">
+        <span>Proudly Supported By</span>
+        <h2>Proudly Supported By</h2>
+        <p>Organizations and businesses supporting My Blood Is Yours.</p>
       </div>
-    </section>
 
-    <section class="live-stats" aria-label="إحصاءات أنا بدي">
-      <div class="live-stats-intro"><span class="live-dot" aria-hidden="true"></span><div><strong>أنا بدي بالأرقام</strong><small>إحصاءات تتحدث تلقائيًا</small></div></div>
-      <article><span aria-hidden="true">✓</span><div><strong id="providers-stat" aria-live="polite">—</strong><small>مقدمو الخدمات المنشورون</small></div></article>
-      <article><span aria-hidden="true">↗</span><div><strong id="visits-stat" aria-live="polite">—</strong><small>زيارات الموقع</small></div></article>
-    </section>
+      <div class="v6-newsbar">
+        <div class="v6-newsbar-label">
+          <span>🤝</span>
+          <div>
+            <strong>Proudly Supported By</strong>
+            <small>بدعم من</small>
+          </div>
+        </div>
 
-    <section class="directory-panel" aria-labelledby="regions-title">
-      <div class="panel-heading">
-          <div><p class="step">الخطوة ١ من ٥</p><h2 id="regions-title">اختار المنطقة</h2></div>
-        <p>سنظهر لك البلدات التابعة إلها بالخطوة التالية.</p>
+        <div class="v6-newsbar-window">
+          <div id="supportersGrid" class="v6-supporters-track">
+            <div class="v6-supporters-loading">
+              <span class="spinner"></span>
+              Loading supporters...
+              <span dir="rtl">جاري تحميل الداعمين</span>
+            </div>
+          </div>
+        </div>
       </div>
-      <div id="regions" class="region-grid" aria-live="polite" aria-busy="true">
-        <span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span>
-        <span class="skeleton"></span><span class="skeleton"></span><span class="skeleton"></span>
-      </div>
-    </section>
+    </div>
+  </section>
 
-    <section class="popular-services" aria-labelledby="popular-title">
-      <div class="section-intro">
-        <div><p class="eyebrow">الأكثر طلبًا</p><h2 id="popular-title">شو بدّك اليوم؟</h2></div>
-        <p>اختار نوع الخدمة، وبعدها حدّد منطقتك لنوصّلك بالأقرب.</p>
-      </div>
-      <div class="service-shortcuts">
-        <a href="#regions-title"><span aria-hidden="true">🍽️</span><strong>مطاعم</strong><small>أكل وتوصيل</small></a>
-        <a href="#regions-title"><span aria-hidden="true">🩺</span><strong>صحة</strong><small>أطباء وعيادات</small></a>
-        <a href="#regions-title"><span aria-hidden="true">🛠️</span><strong>صيانة</strong><small>خدمات منزلية</small></a>
-        <a href="#regions-title"><span aria-hidden="true">🚗</span><strong>سيارات</strong><small>تصليح وخدمات</small></a>
-        <a href="#regions-title"><span aria-hidden="true">✂️</span><strong>جمال</strong><small>حلاقة وعناية</small></a>
-        <a href="#regions-title"><span aria-hidden="true">🛍️</span><strong>تسوّق</strong><small>محلات قريبة</small></a>
-      </div>
-    </section>
+</main>
 
-    <section class="how-it-works" aria-labelledby="how-title">
-      <div class="how-copy">
-        <p class="eyebrow">بسيطة وسريعة</p>
-        <h2 id="how-title">من منطقتك للتواصل بثلاث خطوات</h2>
-        <p>لا تسجيل حساب ولا بحث طويل. اختيارات واضحة توصّلك لمقدم الخدمة المناسب.</p>
-        <a href="#regions-title" class="text-link">جرّب البحث الآن <span aria-hidden="true">←</span></a>
-      </div>
-      <ol class="steps-list">
-        <li><b>١</b><div><strong>حدّد مكانك</strong><small>اختار المنطقة والبلدة</small></div></li>
-        <li><b>٢</b><div><strong>اختار الخدمة</strong><small>تصفّح الفئة والاختصاص</small></div></li>
-        <li><b>٣</b><div><strong>تواصل مباشرة</strong><small>اتصال أو واتساب بضغطة</small></div></li>
-      </ol>
-    </section>
+<footer class="v6-footer">
+  <div class="v6-shell v6-footer-grid">
+    <div class="v6-footer-brand">
+      <img src="assets/logo-64.png" alt="">
+      <strong>My Blood Is Yours</strong>
+      <span>دمنا واحد</span>
+      <p>A humanitarian platform connecting patients with volunteer blood donors across Lebanon.</p>
+    </div>
 
-    <section class="trust-strip" aria-label="مزايا أنا بدي">
-      <article><span aria-hidden="true">📍</span><div><strong>محلي وقريب</strong><small>نتائج مرتبة حسب منطقتك</small></div></article>
-      <article><span aria-hidden="true">✓</span><div><strong>بيانات مراجَعة</strong><small>طلبات مقدمي الخدمات تمر بالمراجعة</small></div></article>
-      <article><span aria-hidden="true">☎</span><div><strong>تواصل مباشر</strong><small>بدون وسيط أو خطوات معقّدة</small></div></article>
-    </section>
+    <div>
+      <h3>Quick Links</h3>
+      <a href="search-wizard.html">Find Donors</a>
+      <a href="add-yourself.html">Become a Donor</a>
+      <a href="about.html">About Us</a>
+      <a href="contact.html">Contact Us</a>
+      <a href="privacy-policy.html">Privacy Policy</a>
+    </div>
 
-    <section class="provider-invite" aria-labelledby="provider-invite-title">
-      <span class="provider-invite-mark" aria-hidden="true">أ</span>
-      <div><p class="eyebrow">لأصحاب الأعمال والخدمات</p><h2 id="provider-invite-title">خلّي الناس ببلدتك تلاقيك</h2><p>أضف معلومات خدمتك مجانًا. نراجع الطلب قبل نشره للحفاظ على دليل واضح وموثوق.</p></div>
-      <a href="add-service.html">سجّل خدمتك الآن</a>
-    </section>
+    <div>
+      <h3>Coverage</h3>
+      <a href="albekaa.html">Bekaa</a>
+      <a href="beirut.html">Beirut</a>
+      <a href="north-lebanon.html">North</a>
+      <a href="south-lebanon.html">South</a>
+    </div>
 
-    <footer class="legal-footer"><span>أنا بدي · الإصدار 5.0 · <a href="admin.html">الإدارة</a></span><nav><a href="privacy.html">الخصوصية</a><a href="terms.html">الشروط</a><a href="disclaimer.html">إخلاء المسؤولية</a><a href="contact.html">التواصل</a></nav></footer>
-  </main>
-  <script type="module" src="js/homev50.js?v=5.0"></script>
+    <div>
+      <h3>Contact</h3>
+      <p>eng.mohamad.mahmoud1986@gmail.com</p>
+      <p>+961 70 530 939</p>
+      <p>Lebanon</p>
+    </div>
+  </div>
+
+  <div class="v6-footer-bottom">
+    <div class="v6-shell">
+      <span>© 2026 My Blood Is Yours</span>
+      <span>صدقة جارية عن روح المرحومة إسعاف عمر درويش</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+const OFFLINE_DONORS_COUNT = 5000;
+
+document.addEventListener("DOMContentLoaded", () => {
+  loadHomepageStats();
+
+  if (typeof loadSupporters === "function") {
+    loadSupporters();
+  }
+});
+
+function toggleV6Menu(button) {
+  const nav = document.getElementById("v6NavLinks");
+  const isOpen = nav.classList.toggle("is-open");
+  button.setAttribute("aria-expanded", String(isOpen));
+}
+
+async function loadHomepageStats() {
+  const donorElement = document.getElementById("donorCount");
+  const callsElement = document.getElementById("outgoingCallsCount");
+
+  try {
+    const [persons, calls] = await Promise.all([
+      MyBloodApp.getPersons(),
+      MyBloodApp.getAllCalls()
+    ]);
+
+    const onlineDonors = persons
+      ? Object.keys(persons).length
+      : 0;
+
+    donorElement.textContent =
+      (onlineDonors + OFFLINE_DONORS_COUNT).toLocaleString();
+
+    callsElement.textContent =
+      calls
+        ? Object.keys(calls).length.toLocaleString()
+        : "0";
+  } catch (error) {
+    console.error("Homepage statistics error:", error);
+    donorElement.textContent = "—";
+    callsElement.textContent = "—";
+  }
+}
+</script>
+
 </body>
 </html>
-
-

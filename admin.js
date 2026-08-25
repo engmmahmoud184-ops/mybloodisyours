@@ -1,46 +1,973 @@
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.18.0/firebase-firestore.js";
-import { auth } from "./auth.js";
-import { db } from "./firebase.js";
-import { approveProviderRequest, getPendingProviderRequests, rejectProviderRequest } from "./services/provider-requests-service.js";
-import { addRegionAdmin, addTownAdmin, getAllProvidersAdmin, getAllRegionsAdmin, getAllTownsAdmin, updateProviderAdmin, updateRegionAdmin, updateTownAdmin } from "./services/admin-data-service.js";
-import { closeReportAdmin, getReportsAdmin } from "./services/reports-service.js";
+"use strict";
 
-const $=s=>document.querySelector(s), loginForm=$("#login-form"), dashboard=$("#dashboard"), loginStatus=$("#login-status");
-let currentAdmin=null, pendingRequests=[], reports=[], providers=[], regions=[], towns=[], selectedRegion="";
-const make=(tag,className,text)=>{const el=document.createElement(tag);if(className)el.className=className;if(text!==undefined)el.textContent=text;return el;};
-const button=(text,className,handler)=>{const el=make("button",className,text);el.type="button";el.addEventListener("click",handler);return el;};
-const field=(label,value)=>{const el=make("div");el.append(make("span",null,label),make("strong",null,value||"—"));return el;};
+const ADMIN_CONFIG = {
+  username: "onsheinTech",
+  passwordHash: "a81a3f213f18c963740a930dd7ab71d911fde5282dd10679d3b10cca810506c5",
+  sessionKey: "myblood_admin_session_v1"
+};
 
-document.querySelectorAll(".admin-tab").forEach(tab=>tab.addEventListener("click",()=>{document.querySelectorAll(".admin-tab").forEach(x=>x.classList.toggle("active",x===tab));document.querySelectorAll(".admin-panel").forEach(x=>x.classList.toggle("hidden",x.id!==tab.dataset.panel));if(tab.dataset.panel==="reports-panel"){reports.length?renderReports():loadReports();}if(tab.dataset.panel==="providers-panel"){providers.length?renderProviders():loadProviders();}if(tab.dataset.panel==="locations-panel"){regions.length?renderLocations():loadLocations();}}));
-document.querySelectorAll("[data-refresh]").forEach(x=>x.addEventListener("click",loadRequests));
+let contributorsCache = {};
 
-async function labelRequest(item){const refs=[doc(db,"regions",item.regionId),doc(db,"towns",item.townId),doc(db,"categories",item.categoryId),doc(db,"specialties",item.specialtyIds[0])];const [region,town,category,specialty]=await Promise.all(refs.map(x=>getDoc(x)));return {...item,placeLabel:`${town.data()?.nameAr||item.townId}، ${region.data()?.nameAr||item.regionId}`,categoryLabel:category.data()?.nameAr||item.categoryId,specialtyLabel:specialty.data()?.nameAr||item.specialtyIds[0]};}
-async function loadRequests(){const list=$("#requests");list.replaceChildren(make("div","notice","جارٍ تحميل الطلبات…"));try{const items=await getPendingProviderRequests();pendingRequests=await Promise.all(items.map(labelRequest));renderFilteredRequests();}catch(error){console.error(error);list.replaceChildren(make("div","notice notice-error","تعذر تحميل الطلبات."));}}
-function renderFilteredRequests(){const term=$("#request-search").value.trim().toLocaleLowerCase("ar"),items=pendingRequests.filter(x=>`${x.name} ${x.phone||""} ${x.address||""} ${x.placeLabel||""}`.toLocaleLowerCase("ar").includes(term));renderRequests(items);}
-function renderRequests(items){const list=$("#requests");list.replaceChildren();$("#request-count").textContent=`${items.length} من أصل ${pendingRequests.length} طلب`;$("#requests-badge").textContent=pendingRequests.length;$("#stat-requests").textContent=pendingRequests.length;if(!items.length){list.append(make("div","notice",pendingRequests.length?"لا توجد نتائج مطابقة.":"لا توجد طلبات جديدة حالياً."));return;}items.forEach(item=>{const card=make("article","request-card"),head=make("div","request-head"),meta=make("div","request-meta"),actions=make("div","request-actions");head.append(make("h2",null,item.name),make("span","status-pill","قيد المراجعة"));meta.append(field("الهاتف",item.phone),field("واتساب",item.whatsapp),field("العنوان",item.address),field("المكان",item.placeLabel),field("الفئة",item.categoryLabel),field("الاختصاص",item.specialtyLabel));actions.append(button("قبول ونشر","secondary-button",()=>review(item.id,"approve")),button("رفض","danger-button",()=>review(item.id,"reject")));card.append(head,meta,make("p","request-description",item.description||"لا يوجد وصف إضافي."),actions);list.append(card);});}
-async function review(id,decision){if(!confirm(decision==="approve"?"هل تريد قبول هذا الطلب ونشر مقدم الخدمة؟":"هل تريد رفض هذا الطلب؟"))return;try{decision==="approve"?await approveProviderRequest(id,currentAdmin.uid):await rejectProviderRequest(id,currentAdmin.uid);await Promise.all([loadRequests(),loadStats()]);}catch(error){console.error(error);alert("تعذر تنفيذ القرار.");}}
-$("#request-search").addEventListener("input",renderFilteredRequests);
+document.addEventListener("DOMContentLoaded", () => {
+  bindAdminEvents();
 
-async function loadReports(){const list=$("#reports-admin-list");list.replaceChildren(make("div","notice","جارٍ تحميل البلاغات…"));try{reports=(await getReportsAdmin()).filter(x=>x.status==="open");renderReports();}catch(error){console.error(error);list.replaceChildren(make("div","notice notice-error","تعذر تحميل البلاغات."));}}
-function renderReports(){const labels={incorrect:"معلومات خاطئة",closed:"خدمة متوقفة",abuse:"إساءة أو نشاط مشبوه",privacy:"طلب خصوصية",other:"موضوع آخر"},list=$("#reports-admin-list");list.replaceChildren();$("#reports-count").textContent=`${reports.length} بلاغ مفتوح`;$("#reports-badge").textContent=reports.length;if(!reports.length){list.append(make("div","notice","لا توجد بلاغات مفتوحة."));return;}reports.forEach(item=>{const card=make("article","request-card"),head=make("div","request-head"),meta=make("div","request-meta"),actions=make("div","request-actions");head.append(make("h2",null,labels[item.type]||"بلاغ"),make("span","status-pill","مفتوح"));meta.append(field("الاسم",item.reporterName),field("التواصل",item.contact),field("الرابط",item.pageUrl));actions.append(button("تمت المعالجة","secondary-button",async()=>{try{await closeReportAdmin(item.id,currentAdmin.uid);reports=reports.filter(x=>x.id!==item.id);renderReports();}catch{alert("تعذر إغلاق البلاغ.");}}));card.append(head,meta,make("p","request-description",item.details),actions);list.append(card);});}
+  if (isAdminSessionActive()) {
+    showDashboard();
+  } else {
+    showLogin();
+  }
+});
 
-async function loadProviders(){const list=$("#providers-admin-list");list.replaceChildren(make("div","notice","جارٍ تحميل مقدمي الخدمات…"));try{providers=await getAllProvidersAdmin();renderProviders();}catch(error){console.error(error);list.replaceChildren(make("div","notice notice-error","تعذر تحميل مقدمي الخدمات."));}}
-async function loadStats(){try{const [providerItems,regionItems,townItems]=await Promise.all([getAllProvidersAdmin(),getAllRegionsAdmin(),getAllTownsAdmin()]);providers=providerItems;regions=regionItems;towns=townItems;$("#stat-providers").textContent=providers.length;$("#stat-active").textContent=providers.filter(x=>x.isActive).length;$("#stat-locations").textContent=`${regions.length} / ${towns.length}`;}catch(error){console.error(error);}}
-function renderProviders(){const term=$("#provider-search").value.trim().toLocaleLowerCase("ar"),items=providers.filter(x=>`${x.name} ${x.phone||""}`.toLocaleLowerCase("ar").includes(term)),list=$("#providers-admin-list");list.replaceChildren();$("#providers-count").textContent=`${items.length} من أصل ${providers.length}`;if(!items.length){list.append(make("div","notice","لا توجد نتائج."));return;}items.forEach(item=>{const card=make("article","admin-item"),copy=make("div","admin-item-copy"),badges=make("div","item-badges"),actions=make("div","item-actions");badges.append(make("span",item.isActive?"active-pill":"inactive-pill",item.isActive?"منشور":"معطّل"));if(item.isVerified)badges.append(make("span","verified-badge","موثّق"));copy.append(make("strong",null,item.name),make("span",null,`${item.phone||"لا يوجد هاتف"} · ${item.address||"لا يوجد عنوان"}`),badges);actions.append(button("تعديل","plain-button",()=>editProvider(item)),button(item.isVerified?"إلغاء التوثيق":"توثيق","plain-button",()=>toggleProvider(item,"isVerified")),button(item.isActive?"تعطيل":"تفعيل",item.isActive?"danger-button":"secondary-button",()=>toggleProvider(item,"isActive")));card.append(copy,actions);list.append(card);});}
-async function toggleProvider(item,key){try{await updateProviderAdmin(item.id,{[key]:!item[key]});item[key]=!item[key];renderProviders();}catch(error){console.error(error);alert("تعذر حفظ التغيير.");}}
-async function editProvider(item){const name=prompt("اسم مقدم الخدمة",item.name);if(name===null||!name.trim())return;const phone=prompt("رقم الهاتف",item.phone||"");if(phone===null)return;const address=prompt("العنوان",item.address||"");if(address===null)return;try{await updateProviderAdmin(item.id,{name:name.trim(),phone:phone.trim(),address:address.trim()});Object.assign(item,{name:name.trim(),phone:phone.trim(),address:address.trim()});providers.sort((a,b)=>a.name.localeCompare(b.name,"ar"));renderProviders();}catch(error){console.error(error);alert("تعذر تعديل مقدم الخدمة.");}}
-$("#provider-search").addEventListener("input",renderProviders);
+function bindAdminEvents() {
+  document
+    .getElementById("loginForm")
+    .addEventListener("submit", handleAdminLogin);
 
-async function loadLocations(){try{[regions,towns]=await Promise.all([getAllRegionsAdmin(),getAllTownsAdmin()]);selectedRegion=selectedRegion||regions[0]?.id||"";renderLocations();}catch(error){console.error(error);$("#regions-admin-list").replaceChildren(make("div","notice notice-error","تعذر تحميل المناطق والبلدات."));}}
-function renderLocations(){const select=$("#town-region");select.replaceChildren(new Option("اختر المنطقة",""));regions.forEach(x=>select.add(new Option(x.nameAr,x.id)));const regionList=$("#regions-admin-list");regionList.replaceChildren();regions.forEach(item=>{const row=make("div",`compact-item ${item.id===selectedRegion?"selected":""}`),pick=button(item.nameAr,"compact-name",()=>{selectedRegion=item.id;renderLocations();}),actions=make("div","mini-actions");pick.append(make("small",null,item.nameEn));actions.append(button("تعديل","text-button",()=>editRegion(item)),button(item.isActive?"تعطيل":"تفعيل","text-button",()=>toggleRegion(item)));row.append(pick,actions);regionList.append(row);});const active=regions.find(x=>x.id===selectedRegion),townList=$("#towns-admin-list");$("#towns-title").textContent=active?`بلدات ${active.nameAr}`:"البلدات";townList.replaceChildren();const filtered=towns.filter(x=>x.regionId===selectedRegion);if(!filtered.length)townList.append(make("div","notice","لا توجد بلدات في هذه المنطقة."));filtered.forEach(item=>{const row=make("div","compact-item"),copy=make("div","compact-copy"),actions=make("div","mini-actions");copy.append(make("strong",null,item.nameAr),make("small",null,item.nameEn));actions.append(button("تعديل","text-button",()=>editTown(item)),button(item.isActive?"تعطيل":"تفعيل","text-button",()=>toggleTown(item)));row.append(copy,actions);townList.append(row);});}
-async function editRegion(item){const nameAr=prompt("اسم المنطقة بالعربية",item.nameAr);if(nameAr===null||!nameAr.trim())return;const nameEn=prompt("اسم المنطقة بالإنجليزية",item.nameEn||"");if(nameEn===null)return;try{await updateRegionAdmin(item.id,{nameAr:nameAr.trim(),nameEn:nameEn.trim()});Object.assign(item,{nameAr:nameAr.trim(),nameEn:nameEn.trim()});renderLocations();}catch{alert("تعذر تعديل المنطقة.");}}
-async function toggleRegion(item){try{await updateRegionAdmin(item.id,{isActive:!item.isActive});item.isActive=!item.isActive;renderLocations();}catch{alert("تعذر حفظ التغيير.");}}
-async function editTown(item){const nameAr=prompt("اسم البلدة بالعربية",item.nameAr);if(nameAr===null||!nameAr.trim())return;const nameEn=prompt("اسم البلدة بالإنجليزية",item.nameEn||"");if(nameEn===null)return;try{await updateTownAdmin(item.id,{nameAr:nameAr.trim(),nameEn:nameEn.trim(),legacyKey:nameEn.trim()});Object.assign(item,{nameAr:nameAr.trim(),nameEn:nameEn.trim()});renderLocations();}catch{alert("تعذر تعديل البلدة.");}}
-async function toggleTown(item){try{await updateTownAdmin(item.id,{isActive:!item.isActive});item.isActive=!item.isActive;renderLocations();}catch{alert("تعذر حفظ التغيير.");}}
-$("#region-form").addEventListener("submit",async event=>{event.preventDefault();const submit=event.submitter;submit.disabled=true;try{await addRegionAdmin({nameAr:$("#region-name-ar").value,nameEn:$("#region-name-en").value});event.target.reset();await loadLocations();}catch{alert("تعذر إضافة المنطقة.");}finally{submit.disabled=false;}});
-$("#town-form").addEventListener("submit",async event=>{event.preventDefault();const submit=event.submitter;submit.disabled=true;try{await addTownAdmin({regionId:$("#town-region").value,nameAr:$("#town-name-ar").value,nameEn:$("#town-name-en").value});event.target.reset();await loadLocations();}catch{alert("تعذر إضافة البلدة.");}finally{submit.disabled=false;}});
+  document
+    .getElementById("contributorForm")
+    .addEventListener("submit", saveContributor);
 
-loginForm.addEventListener("submit",async event=>{event.preventDefault();loginStatus.textContent="جارٍ تسجيل الدخول…";try{await signInWithEmailAndPassword(auth,$("#email").value,$("#password").value);}catch(error){console.error(error);loginStatus.textContent="بيانات الدخول غير صحيحة أو طريقة Email/Password غير مفعّلة.";}});
-$("#logout").addEventListener("click",()=>signOut(auth));
-onAuthStateChanged(auth,async user=>{if(!user){currentAdmin=null;dashboard.classList.add("hidden");loginForm.classList.remove("hidden");return;}try{const admin=await getDoc(doc(db,"admins",user.uid));if(!admin.exists()||admin.data().isActive!==true){loginStatus.textContent="هذا الحساب لا يملك صلاحية الإدارة.";await signOut(auth);return;}currentAdmin=user;loginForm.classList.add("hidden");dashboard.classList.remove("hidden");$("#admin-email").textContent=user.email;await Promise.all([loadRequests(),loadReports(),loadStats()]);}catch(error){console.error(error);loginStatus.textContent="تعذر التحقق من صلاحية الإدارة.";await signOut(auth);}});
+  document
+    .getElementById("contributionScope")
+    .addEventListener("change", updateScopeFields);
+
+  document
+    .getElementById("regionCode")
+    .addEventListener("change", syncRegionName);
+
+  document
+    .getElementById("logoUrl")
+    .addEventListener("input", handleLogoUrlInput);
+
+  document
+    .getElementById("logoFile")
+    .addEventListener("change", handleLogoFileChange);
+
+  document
+    .getElementById("contributorsSearch")
+    .addEventListener("input", renderContributors);
+
+  document
+    .getElementById("tierFilter")
+    .addEventListener("change", renderContributors);
+
+  document
+    .getElementById("scopeFilter")
+    .addEventListener("change", renderContributors);
+
+  document
+    .getElementById("contributorModal")
+    .addEventListener("click", event => {
+      if (event.target.id === "contributorModal") {
+        closeContributorForm();
+      }
+    });
+}
+
+async function sha256(value) {
+  const data = new TextEncoder().encode(value);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+
+  return Array.from(new Uint8Array(hashBuffer))
+    .map(byte => byte.toString(16).padStart(2, "0"))
+    .join("");
+}
+
+async function handleAdminLogin(event) {
+  event.preventDefault();
+
+  const username =
+    document.getElementById("loginUsername").value.trim();
+
+  const password =
+    document.getElementById("loginPassword").value;
+
+  const passwordHash = await sha256(password);
+
+  if (
+    username === ADMIN_CONFIG.username &&
+    passwordHash === ADMIN_CONFIG.passwordHash
+  ) {
+    sessionStorage.setItem(
+      ADMIN_CONFIG.sessionKey,
+      JSON.stringify({
+        username,
+        loggedInAt: new Date().toISOString()
+      })
+    );
+
+    document.getElementById("loginForm").reset();
+    showDashboard();
+    return;
+  }
+
+  setAdminMessage(
+    "loginMessage",
+    "error",
+    "Invalid username or password."
+  );
+}
+
+function isAdminSessionActive() {
+  return Boolean(
+    sessionStorage.getItem(ADMIN_CONFIG.sessionKey)
+  );
+}
+
+function adminLogout() {
+  sessionStorage.removeItem(ADMIN_CONFIG.sessionKey);
+  contributorsCache = {};
+  showLogin();
+}
+
+function showLogin() {
+  document.getElementById("loginView").hidden = false;
+  document.getElementById("dashboardView").hidden = true;
+  closeContributorForm();
+}
+
+function showDashboard() {
+  document.getElementById("loginView").hidden = true;
+  document.getElementById("dashboardView").hidden = false;
+  loadContributors();
+}
+
+async function loadContributors() {
+  const loading = document.getElementById("contributorsLoading");
+
+  loading.hidden = false;
+
+  try {
+    contributorsCache =
+      await MyBloodApp.request("/Contributors.json") || {};
+
+    renderContributors();
+    updateSummary();
+  } catch (error) {
+    contributorsCache = {};
+    renderContributors();
+
+    showToast(
+      "Unable to load Contributors: " + error.message,
+      "error"
+    );
+  } finally {
+    loading.hidden = true;
+  }
+}
+
+function getFilteredContributors() {
+  const search =
+    document.getElementById("contributorsSearch")
+      .value.trim().toLowerCase();
+
+  const tier =
+    document.getElementById("tierFilter").value;
+
+  const scope =
+    document.getElementById("scopeFilter").value;
+
+  return Object.entries(contributorsCache)
+    .map(([id, contributor]) => ({
+      id,
+      ...contributor
+    }))
+    .filter(contributor => {
+      const text = [
+        contributor.CompanyName,
+        contributor.CompanyNameAr,
+        contributor.RegionName,
+        contributor.RegionCode,
+        contributor.TownName,
+        contributor.TownCode
+      ].join(" ").toLowerCase();
+
+      return (
+        (!search || text.includes(search)) &&
+        (!tier || contributor.Tier === tier) &&
+        (!scope || contributor.ContributionScope === scope)
+      );
+    })
+    .sort((first, second) => {
+      const tierOrder = {
+        GOLD: 1,
+        SILVER: 2,
+        BRONZE: 3
+      };
+
+      const firstTier =
+        tierOrder[first.Tier] || 99;
+
+      const secondTier =
+        tierOrder[second.Tier] || 99;
+
+      if (firstTier !== secondTier) {
+        return firstTier - secondTier;
+      }
+
+      return (
+        Number(first.DisplayOrder || 9999) -
+        Number(second.DisplayOrder || 9999)
+      );
+    });
+}
+
+function renderContributors() {
+  const grid =
+    document.getElementById("contributorsGrid");
+
+  const empty =
+    document.getElementById("contributorsEmpty");
+
+  const contributors =
+    getFilteredContributors();
+
+  grid.innerHTML = "";
+
+  if (!contributors.length) {
+    empty.hidden = false;
+    return;
+  }
+
+  empty.hidden = true;
+
+  contributors.forEach(contributor => {
+    grid.appendChild(
+      createContributorCard(contributor)
+    );
+  });
+}
+
+function createContributorCard(contributor) {
+  const card = document.createElement("article");
+  card.className = "admin-contributor-card";
+
+  const tierClass =
+    String(contributor.Tier || "").toLowerCase();
+
+  const scopeLabel = getScopeLabel(contributor);
+
+  card.innerHTML = `
+    <div class="admin-contributor-logo">
+      <img
+        src="${escapeAdminHtml(contributor.LogoUrl || "")}"
+        alt="${escapeAdminHtml(contributor.CompanyName || "Contributor")}">
+    </div>
+
+    <div class="admin-contributor-main">
+      <div class="admin-contributor-title">
+        <div>
+          <h3>${escapeAdminHtml(contributor.CompanyName || "Unnamed")}</h3>
+          <p dir="rtl">${escapeAdminHtml(contributor.CompanyNameAr || "")}</p>
+        </div>
+
+        <span class="admin-tier-badge ${tierClass}">
+          ${escapeAdminHtml(contributor.Tier || "—")}
+        </span>
+      </div>
+
+      <div class="admin-contributor-meta">
+        <span>${escapeAdminHtml(scopeLabel)}</span>
+        <span>Order: ${Number(contributor.DisplayOrder || 0)}</span>
+        <span class="${contributor.IsActive ? "active" : "inactive"}">
+          ${contributor.IsActive ? "Active" : "Inactive"}
+        </span>
+      </div>
+
+      <div class="admin-contributor-actions">
+        <button
+          type="button"
+          onclick="editContributor('${contributor.id}')">
+          Edit
+        </button>
+
+        <button
+          class="danger"
+          type="button"
+          onclick="deleteContributor('${contributor.id}')">
+          Delete
+        </button>
+      </div>
+    </div>
+  `;
+
+  const image = card.querySelector("img");
+
+  image.addEventListener("error", () => {
+    image.closest(".admin-contributor-logo").textContent =
+      (contributor.CompanyName || "C").charAt(0).toUpperCase();
+  });
+
+  return card;
+}
+
+function getScopeLabel(contributor) {
+  if (contributor.ContributionScope === "NATIONAL") {
+    return "National";
+  }
+
+  if (contributor.ContributionScope === "REGION") {
+    return "Region: " +
+      (contributor.RegionName || contributor.RegionCode || "—");
+  }
+
+  if (contributor.ContributionScope === "TOWN") {
+    return "Town: " +
+      (contributor.TownName || contributor.TownCode || "—");
+  }
+
+  return contributor.ContributionScope || "—";
+}
+
+function updateSummary() {
+  const contributors =
+    Object.values(contributorsCache || {});
+
+  document.getElementById("summaryTotal").textContent =
+    contributors.length;
+
+  document.getElementById("summaryGold").textContent =
+    contributors.filter(item => item.Tier === "GOLD").length;
+
+  document.getElementById("summarySilver").textContent =
+    contributors.filter(item => item.Tier === "SILVER").length;
+
+  document.getElementById("summaryBronze").textContent =
+    contributors.filter(item => item.Tier === "BRONZE").length;
+}
+
+function openContributorForm(contributor = null) {
+  const modal =
+    document.getElementById("contributorModal");
+
+  const form =
+    document.getElementById("contributorForm");
+
+  form.reset();
+  document.getElementById("contributorId").value = "";
+  document.getElementById("isActive").checked = true;
+  document.getElementById("showOnHomepage").checked = true;
+  document.getElementById("showOnRegionPages").checked = true;
+  document.getElementById("showOnTownPages").checked = true;
+  document.getElementById("displayOrder").value = 1;
+  document.getElementById("logoData").value = "";
+  document.getElementById("logoFile").value = "";
+  document.getElementById("logoUrl").value = "";
+
+  document.getElementById("contributorModalTitle").textContent =
+    contributor ? "Edit Contributor" : "Add Contributor";
+
+  if (contributor) {
+    document.getElementById("contributorId").value =
+      contributor.id || "";
+
+    document.getElementById("companyName").value =
+      contributor.CompanyName || "";
+
+    document.getElementById("companyNameAr").value =
+      contributor.CompanyNameAr || "";
+
+    document.getElementById("tier").value =
+      contributor.Tier || "GOLD";
+
+    document.getElementById("contributionScope").value =
+      contributor.ContributionScope || "NATIONAL";
+
+    document.getElementById("regionCode").value =
+      contributor.RegionCode || "";
+
+    document.getElementById("regionName").value =
+      contributor.RegionName || "";
+
+    document.getElementById("townCode").value =
+      contributor.TownCode || "";
+
+    document.getElementById("townName").value =
+      contributor.TownName || "";
+
+    const existingLogo = contributor.LogoUrl || "";
+
+    document.getElementById("logoData").value =
+      existingLogo.startsWith("data:image/")
+        ? existingLogo
+        : "";
+
+    document.getElementById("logoUrl").value =
+      existingLogo.startsWith("data:image/")
+        ? ""
+        : existingLogo;
+
+    document.getElementById("websiteUrl").value =
+      contributor.WebsiteUrl || "";
+
+    document.getElementById("displayOrder").value =
+      contributor.DisplayOrder ?? 1;
+
+    document.getElementById("contributionType").value =
+      contributor.ContributionType || "FINANCIAL";
+
+    document.getElementById("isActive").checked =
+      contributor.IsActive !== false;
+
+    document.getElementById("showOnHomepage").checked =
+      contributor.ShowOnHomepage !== false;
+
+    document.getElementById("showOnRegionPages").checked =
+      contributor.ShowOnRegionPages !== false;
+
+    document.getElementById("showOnTownPages").checked =
+      contributor.ShowOnTownPages !== false;
+
+    document.getElementById("notes").value =
+      contributor.Notes || "";
+  }
+
+  updateScopeFields();
+  updateLogoPreview();
+
+  modal.hidden = false;
+  document.body.classList.add("admin-modal-open");
+}
+
+function closeContributorForm() {
+  const modal =
+    document.getElementById("contributorModal");
+
+  if (modal) {
+    modal.hidden = true;
+  }
+
+  document.body.classList.remove("admin-modal-open");
+  setAdminMessage("contributorFormMessage", "", "");
+}
+
+function editContributor(id) {
+  const contributor =
+    contributorsCache[id];
+
+  if (!contributor) {
+    return;
+  }
+
+  openContributorForm({
+    id,
+    ...contributor
+  });
+}
+
+async function saveContributor(event) {
+  event.preventDefault();
+
+  const button =
+    document.getElementById("saveContributorButton");
+
+  const contributorId =
+    document.getElementById("contributorId").value;
+
+  const scope =
+    document.getElementById("contributionScope").value;
+
+  const regionCode =
+    document.getElementById("regionCode").value.trim();
+
+  const regionName =
+    document.getElementById("regionName").value.trim();
+
+  const townCode =
+    document.getElementById("townCode").value.trim();
+
+  const townName =
+    document.getElementById("townName").value.trim();
+
+  if (scope === "REGION" && !regionCode) {
+    setAdminMessage(
+      "contributorFormMessage",
+      "error",
+      "Region is required for REGION scope."
+    );
+    return;
+  }
+
+  if (
+    scope === "TOWN" &&
+    (!regionCode || !townCode || !townName)
+  ) {
+    setAdminMessage(
+      "contributorFormMessage",
+      "error",
+      "Region, Town Code, and Town Name are required for TOWN scope."
+    );
+    return;
+  }
+
+  const selectedLogo = getSelectedLogoValue();
+
+  if (!selectedLogo) {
+    setAdminMessage(
+      "contributorFormMessage",
+      "error",
+      "Please upload a logo or enter a Logo URL."
+    );
+    return;
+  }
+
+  const now = new Date().toISOString();
+
+  const payload = {
+    CompanyName:
+      document.getElementById("companyName").value.trim(),
+
+    CompanyNameAr:
+      document.getElementById("companyNameAr").value.trim(),
+
+    Tier:
+      document.getElementById("tier").value,
+
+    ContributionScope: scope,
+
+    RegionCode:
+      scope === "NATIONAL" ? "" : regionCode,
+
+    RegionName:
+      scope === "NATIONAL" ? "" : regionName,
+
+    TownCode:
+      scope === "TOWN" ? townCode.toUpperCase() : "",
+
+    TownName:
+      scope === "TOWN" ? townName : "",
+
+    LogoUrl:
+      getSelectedLogoValue(),
+
+    WebsiteUrl:
+      document.getElementById("websiteUrl").value.trim(),
+
+    DisplayOrder:
+      Number(document.getElementById("displayOrder").value || 0),
+
+    ContributionType:
+      document.getElementById("contributionType").value,
+
+    IsActive:
+      document.getElementById("isActive").checked,
+
+    ShowOnHomepage:
+      document.getElementById("showOnHomepage").checked,
+
+    ShowOnRegionPages:
+      document.getElementById("showOnRegionPages").checked,
+
+    ShowOnTownPages:
+      document.getElementById("showOnTownPages").checked,
+
+    Notes:
+      document.getElementById("notes").value.trim(),
+
+    UpdatedAt: now,
+    UpdatedBy: ADMIN_CONFIG.username
+  };
+
+  button.disabled = true;
+  button.textContent = "Saving...";
+
+  try {
+    if (contributorId) {
+      payload.CreatedAt =
+        contributorsCache[contributorId]?.CreatedAt || now;
+
+      payload.CreatedBy =
+        contributorsCache[contributorId]?.CreatedBy ||
+        ADMIN_CONFIG.username;
+
+      await MyBloodApp.request(
+        "/Contributors/" + contributorId + ".json",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      showToast("Contributor updated successfully.", "success");
+    } else {
+      payload.CreatedAt = now;
+      payload.CreatedBy = ADMIN_CONFIG.username;
+
+      await MyBloodApp.request(
+        "/Contributors.json",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        }
+      );
+
+      showToast("Contributor added successfully.", "success");
+    }
+
+    closeContributorForm();
+    await loadContributors();
+  } catch (error) {
+    setAdminMessage(
+      "contributorFormMessage",
+      "error",
+      "Unable to save: " + error.message
+    );
+  } finally {
+    button.disabled = false;
+    button.textContent = "Save Contributor";
+  }
+}
+
+async function deleteContributor(id) {
+  const contributor =
+    contributorsCache[id];
+
+  if (!contributor) {
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Delete contributor: " +
+    (contributor.CompanyName || id) +
+    "?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    await MyBloodApp.request(
+      "/Contributors/" + id + ".json",
+      {
+        method: "DELETE"
+      }
+    );
+
+    showToast("Contributor deleted.", "success");
+    await loadContributors();
+  } catch (error) {
+    showToast(
+      "Unable to delete: " + error.message,
+      "error"
+    );
+  }
+}
+
+function updateScopeFields() {
+  const scope =
+    document.getElementById("contributionScope").value;
+
+  const showRegion =
+    scope === "REGION" || scope === "TOWN";
+
+  const showTown =
+    scope === "TOWN";
+
+  document.getElementById("regionCodeField").hidden =
+    !showRegion;
+
+  document.getElementById("regionNameField").hidden =
+    !showRegion;
+
+  document.getElementById("townCodeField").hidden =
+    !showTown;
+
+  document.getElementById("townNameField").hidden =
+    !showTown;
+
+  document.getElementById("regionCode").required =
+    showRegion;
+
+  document.getElementById("townCode").required =
+    showTown;
+
+  document.getElementById("townName").required =
+    showTown;
+
+  if (!showRegion) {
+    document.getElementById("regionCode").value = "";
+    document.getElementById("regionName").value = "";
+  }
+
+  if (!showTown) {
+    document.getElementById("townCode").value = "";
+    document.getElementById("townName").value = "";
+  }
+}
+
+function syncRegionName() {
+  const select =
+    document.getElementById("regionCode");
+
+  const selected =
+    select.options[select.selectedIndex];
+
+  document.getElementById("regionName").value =
+    selected && select.value
+      ? selected.textContent.trim()
+      : "";
+}
+
+function getSelectedLogoValue() {
+  const uploadedData =
+    document.getElementById("logoData").value.trim();
+
+  const externalUrl =
+    document.getElementById("logoUrl").value.trim();
+
+  return uploadedData || externalUrl;
+}
+
+function handleLogoUrlInput() {
+  const url =
+    document.getElementById("logoUrl").value.trim();
+
+  if (url) {
+    document.getElementById("logoData").value = "";
+    document.getElementById("logoFile").value = "";
+  }
+
+  updateLogoPreview();
+}
+
+async function handleLogoFileChange(event) {
+  const file =
+    event.target.files && event.target.files[0];
+
+  if (!file) {
+    return;
+  }
+
+  if (!file.type.startsWith("image/")) {
+    setAdminMessage(
+      "contributorFormMessage",
+      "error",
+      "Please select a valid image file."
+    );
+    event.target.value = "";
+    return;
+  }
+
+  const maxOriginalSize = 8 * 1024 * 1024;
+
+  if (file.size > maxOriginalSize) {
+    setAdminMessage(
+      "contributorFormMessage",
+      "error",
+      "The selected image is larger than 8 MB."
+    );
+    event.target.value = "";
+    return;
+  }
+
+  try {
+    setAdminMessage(
+      "contributorFormMessage",
+      "",
+      "Processing image..."
+    );
+
+    const compressedDataUrl =
+      await compressContributorImage(file);
+
+    document.getElementById("logoData").value =
+      compressedDataUrl;
+
+    document.getElementById("logoUrl").value = "";
+
+    updateLogoPreview();
+
+    setAdminMessage(
+      "contributorFormMessage",
+      "success",
+      "Logo processed successfully."
+    );
+  } catch (error) {
+    setAdminMessage(
+      "contributorFormMessage",
+      "error",
+      "Unable to process image: " + error.message
+    );
+
+    event.target.value = "";
+  }
+}
+
+function compressContributorImage(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onerror = () => {
+      reject(new Error("Unable to read the selected file."));
+    };
+
+    reader.onload = () => {
+      const image = new Image();
+
+      image.onerror = () => {
+        reject(new Error("The selected file is not a readable image."));
+      };
+
+      image.onload = () => {
+        const maxWidth = 900;
+        const maxHeight = 500;
+
+        const scale = Math.min(
+          1,
+          maxWidth / image.width,
+          maxHeight / image.height
+        );
+
+        const width =
+          Math.max(1, Math.round(image.width * scale));
+
+        const height =
+          Math.max(1, Math.round(image.height * scale));
+
+        const canvas =
+          document.createElement("canvas");
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const context =
+          canvas.getContext("2d");
+
+        context.fillStyle = "#ffffff";
+        context.fillRect(0, 0, width, height);
+
+        context.drawImage(
+          image,
+          0,
+          0,
+          width,
+          height
+        );
+
+        let quality = 0.86;
+        let dataUrl =
+          canvas.toDataURL("image/webp", quality);
+
+        const targetLength = 350000;
+
+        while (
+          dataUrl.length > targetLength &&
+          quality > 0.48
+        ) {
+          quality -= 0.08;
+          dataUrl =
+            canvas.toDataURL("image/webp", quality);
+        }
+
+        resolve(dataUrl);
+      };
+
+      image.src = reader.result;
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+
+function updateLogoPreview() {
+  const value =
+    getSelectedLogoValue();
+
+  const image =
+    document.getElementById("logoPreview");
+
+  const placeholder =
+    document.getElementById("logoPreviewPlaceholder");
+
+  const sizeInfo =
+    document.getElementById("logoSizeInfo");
+
+  if (!value) {
+    image.removeAttribute("src");
+    image.hidden = true;
+    placeholder.hidden = false;
+    placeholder.textContent = "No image selected";
+    sizeInfo.textContent = "";
+    return;
+  }
+
+  image.src = value;
+  image.hidden = false;
+  placeholder.hidden = true;
+
+  if (value.startsWith("data:image/")) {
+    const approximateBytes =
+      Math.round((value.length * 3) / 4);
+
+    sizeInfo.textContent =
+      "Stored image size: approximately " +
+      formatAdminBytes(approximateBytes);
+  } else {
+    sizeInfo.textContent =
+      "External image URL";
+  }
+
+  image.onerror = () => {
+    image.hidden = true;
+    placeholder.hidden = false;
+    placeholder.textContent = "Unable to load this image.";
+  };
+
+  image.onload = () => {
+    image.hidden = false;
+    placeholder.hidden = true;
+  };
+}
+
+function formatAdminBytes(bytes) {
+  if (bytes < 1024) {
+    return bytes + " B";
+  }
+
+  if (bytes < 1024 * 1024) {
+    return (bytes / 1024).toFixed(1) + " KB";
+  }
+
+  return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+}
+
+function setAdminMessage(id, type, text) {
+  const element =
+    document.getElementById(id);
+
+  element.className =
+    "admin-message" + (type ? " " + type : "");
+
+  element.textContent = text;
+}
+
+function showToast(text, type = "success") {
+  const toast =
+    document.getElementById("adminToast");
+
+  toast.className = "admin-toast " + type;
+  toast.textContent = text;
+  toast.hidden = false;
+
+  clearTimeout(showToast.timeout);
+
+  showToast.timeout = setTimeout(() => {
+    toast.hidden = true;
+  }, 3500);
+}
+
+function escapeAdminHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
