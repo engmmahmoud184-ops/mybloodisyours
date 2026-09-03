@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.engmohamdmahmoud.mybloodisyours",
+      "sha256_cert_fingerprints": [
+        "90:ED:70:50:14:64:52:7A:48:44:F2:EA:4B:76:33:6E:99:DA:15:5B:52:6F:94:FE:C4:33:9F:FD:99:55:5E:7B"
+      ]
+    }
+  }
+]
