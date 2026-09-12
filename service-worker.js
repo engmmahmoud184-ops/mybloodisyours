@@ -1,4 +1,4 @@
-const CACHE_NAME = "myblood-pwa-v15-github-hero";
+const CACHE_NAME = "myblood-pwa-v17-mobile-hero";
 const OFFLINE_URL = "/offline.html";
 
 const APP_SHELL = [
