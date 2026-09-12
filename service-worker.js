@@ -1,4 +1,4 @@
-const CACHE_NAME = "myblood-pwa-v2-birthyear";
+const CACHE_NAME = "myblood-pwa-v15-github-hero";
 const OFFLINE_URL = "/offline.html";
 
 const APP_SHELL = [
@@ -25,7 +25,8 @@ const APP_SHELL = [
   "/assets/logo-maskable-192.png",
   "/assets/logo-maskable-512.png",
   "/assets/profile.png",
-  "/assets/lebanon-coverage-map.png"
+  "/assets/lebanon-coverage-map.png",
+  "/assets/hero-donation-center-v3.png"
 ];
 
 self.addEventListener("install", event => {
