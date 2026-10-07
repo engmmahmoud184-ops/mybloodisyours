@@ -1530,6 +1530,26 @@ textarea:focus-visible{
   line-height:1.7;
 }
 
+.medical-partnership-description .agreement-statement-ar{
+  margin:0;
+  padding:16px 18px;
+  border-right:4px solid var(--v6-red);
+  border-radius:14px;
+  background:#fff5f6;
+  color:var(--v6-text);
+  font-size:17px;
+  font-weight:850;
+  line-height:1.9;
+  text-align:right;
+}
+
+.medical-partnership-description .agreement-statement-en{
+  margin:13px 8px 0;
+  color:#52657c;
+  font-size:14px;
+  line-height:1.7;
+}
+
 @media(max-width:680px){
   .medical-partnership-card{border-radius:22px}
   .medical-partnership-copy{padding:27px 18px 30px}
@@ -1540,6 +1560,8 @@ textarea:focus-visible{
   .medical-partnership-role span{font-size:12px;line-height:1.5}
   .medical-partnership-description{margin-top:16px;padding-top:14px}
   .medical-partnership-description p{font-size:13px;line-height:1.65}
+  .medical-partnership-description .agreement-statement-ar{padding:14px;font-size:15px;line-height:1.85}
+  .medical-partnership-description .agreement-statement-en{margin-top:11px;font-size:12px;line-height:1.65}
 }
 
 

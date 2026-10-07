@@ -1,4 +1,4 @@
-const CACHE_NAME = "myblood-pwa-v18-medical-partnership";
+const CACHE_NAME = "myblood-pwa-v18-1-medical-partnership";
 const OFFLINE_URL = "/offline.html";
 
 const APP_SHELL = [
