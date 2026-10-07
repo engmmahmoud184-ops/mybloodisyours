@@ -1447,10 +1447,10 @@ textarea:focus-visible{
   max-width:1080px;
   margin-inline:auto;
   overflow:hidden;
-  border:1px solid rgba(16,45,82,.11);
+  border:1px solid rgba(184,139,52,.28);
   border-radius:36px;
   background:rgba(255,255,255,.97);
-  box-shadow:0 36px 95px rgba(16,45,82,.17),0 2px 0 rgba(255,255,255,.9) inset;
+  box-shadow:0 42px 110px rgba(16,45,82,.18),0 0 0 1px rgba(255,255,255,.82) inset;
 }
 
 .medical-partnership-card::before{
@@ -1472,9 +1472,9 @@ textarea:focus-visible{
   content:"";
   position:absolute;
   inset:auto 0 0;
-  height:20%;
+  height:27%;
   pointer-events:none;
-  background:linear-gradient(180deg,transparent,rgba(6,24,48,.18));
+  background:linear-gradient(180deg,transparent,rgba(6,24,48,.34));
 }
 
 .medical-partnership-visual img{
@@ -1496,12 +1496,12 @@ textarea:focus-visible{
   justify-content:center;
   gap:11px;
   padding:11px 20px;
-  border:1px solid rgba(197,155,70,.38);
+  border:1px solid rgba(235,205,137,.62);
   border-radius:999px;
   transform:translate(-50%,50%);
-  background:rgba(255,255,255,.96);
-  color:var(--v6-navy);
-  box-shadow:0 15px 40px rgba(16,45,82,.18);
+  background:linear-gradient(135deg,rgba(16,45,82,.98),rgba(25,63,109,.97));
+  color:#fff;
+  box-shadow:0 17px 44px rgba(16,45,82,.3),0 0 0 4px rgba(255,255,255,.75);
   backdrop-filter:blur(14px);
 }
 
@@ -1521,7 +1521,7 @@ textarea:focus-visible{
 
 .partnership-official-badge>span:last-child{display:flex;flex-direction:column;text-align:left}
 .partnership-official-badge strong{font-size:14px;line-height:1.2}
-.partnership-official-badge small{margin-top:3px;color:#6a7482;font-size:10px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
+.partnership-official-badge small{margin-top:3px;color:#e8d6a9;font-size:10px;font-weight:850;letter-spacing:.06em;text-transform:uppercase}
 
 .medical-partnership-copy{
   position:relative;
@@ -1567,6 +1567,62 @@ textarea:focus-visible{
   line-height:1.15;
   font-weight:1000;
 }
+
+.hospital-partnership-heading{
+  max-width:720px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:24px;
+  margin-inline:auto;
+}
+
+.hospital-partnership-heading h2{flex:0 1 auto}
+
+.hospital-gold-mark{
+  position:relative;
+  min-width:154px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px 10px 10px;
+  overflow:hidden;
+  border:1px solid #b2822e;
+  border-radius:18px;
+  background:linear-gradient(135deg,#fff4ce 0%,#e7c36e 43%,#bd8b2f 100%);
+  color:#3f2b0d;
+  box-shadow:0 13px 30px rgba(160,115,33,.26),inset 0 1px 0 rgba(255,255,255,.8);
+}
+
+.hospital-gold-mark::after{
+  content:"";
+  position:absolute;
+  top:-55%;
+  left:-45%;
+  width:38%;
+  height:210%;
+  transform:rotate(24deg);
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.62),transparent);
+}
+
+.hospital-gold-star{
+  width:40px;
+  height:40px;
+  flex:0 0 40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(255,255,255,.7);
+  border-radius:50%;
+  background:linear-gradient(145deg,#9a6d1f,#67460f);
+  color:#ffe9a8;
+  font-size:19px;
+  box-shadow:0 7px 16px rgba(83,53,8,.25);
+}
+
+.hospital-gold-mark>span:last-child{display:flex;flex-direction:column;text-align:left}
+.hospital-gold-mark strong{font-size:13px;line-height:1.25;white-space:nowrap}
+.hospital-gold-mark small{margin-top:3px;color:#5f4111;font-size:9px;font-weight:1000;letter-spacing:.07em;text-transform:uppercase}
 
 .medical-partnership-copy h2 span,
 .medical-partnership-copy h2 small{
@@ -1654,6 +1710,13 @@ textarea:focus-visible{
   border-radius:17px;
   background:#f8fafc;
   text-align:left;
+  transition:transform .2s ease,box-shadow .2s ease,border-color .2s ease;
+}
+
+.partnership-highlights li:hover{
+  transform:translateY(-3px);
+  border-color:rgba(197,155,70,.38);
+  box-shadow:0 12px 26px rgba(16,45,82,.09);
 }
 
 .partnership-highlights li>span{
@@ -1686,6 +1749,10 @@ textarea:focus-visible{
   .medical-partnership-copy{padding:50px 16px 27px}
   .medical-partnership-kicker{font-size:9px;line-height:1.5;letter-spacing:.045em}
   .medical-partnership-copy h2{font-size:31px}
+  .hospital-partnership-heading{flex-direction:column;gap:13px}
+  .hospital-gold-mark{min-width:148px;padding:8px 12px 8px 8px;border-radius:15px}
+  .hospital-gold-star{width:35px;height:35px;flex-basis:35px;font-size:16px}
+  .hospital-gold-mark strong{font-size:12px}
   .medical-partnership-role{margin-top:16px}
   .medical-partnership-role strong{font-size:18px}
   .medical-partnership-role span{font-size:12px;line-height:1.5}
