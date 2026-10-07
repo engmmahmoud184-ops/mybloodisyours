@@ -1405,6 +1405,143 @@ textarea:focus-visible{
   }
 }
 
+/* V18 — Bekaa Hospital strategic medical partnership */
+.medical-partnership{
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 12% 16%,rgba(215,25,50,.08),transparent 28%),
+    radial-gradient(circle at 88% 86%,rgba(16,45,82,.09),transparent 30%),
+    linear-gradient(180deg,#ffffff 0%,#f6f9fc 100%);
+}
+
+.medical-partnership-card{
+  max-width:1080px;
+  margin-inline:auto;
+  overflow:hidden;
+  border:1px solid rgba(16,45,82,.12);
+  border-radius:32px;
+  background:#fff;
+  box-shadow:0 30px 80px rgba(16,45,82,.13);
+}
+
+.medical-partnership-visual{
+  position:relative;
+  overflow:hidden;
+  background:#0d2b4f;
+}
+
+.medical-partnership-visual::after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0;
+  height:20%;
+  pointer-events:none;
+  background:linear-gradient(180deg,transparent,rgba(6,24,48,.18));
+}
+
+.medical-partnership-visual img{
+  width:100%;
+  height:auto;
+  aspect-ratio:1672/941;
+  display:block;
+  object-fit:cover;
+}
+
+.medical-partnership-copy{
+  position:relative;
+  padding:34px 42px 38px;
+  text-align:center;
+}
+
+.medical-partnership-copy::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:50%;
+  width:86px;
+  height:4px;
+  border-radius:999px;
+  transform:translate(-50%,-50%);
+  background:linear-gradient(90deg,var(--v6-red),#ef6072);
+}
+
+.medical-partnership-kicker{
+  display:block;
+  margin-bottom:12px;
+  color:var(--v6-red2);
+  font-size:12px;
+  font-weight:950;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.medical-partnership-copy h2{
+  margin:0;
+  color:var(--v6-navy);
+  font-size:clamp(30px,4vw,46px);
+  line-height:1.15;
+  font-weight:1000;
+}
+
+.medical-partnership-copy h2 span,
+.medical-partnership-copy h2 small{
+  display:block;
+}
+
+.medical-partnership-copy h2 small{
+  margin-top:5px;
+  color:#52657c;
+  font-size:.46em;
+  font-weight:850;
+  letter-spacing:.02em;
+}
+
+.medical-partnership-role{
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  margin:20px 0 0;
+}
+
+.medical-partnership-role strong{
+  color:var(--v6-red2);
+  font-size:clamp(19px,2.6vw,27px);
+  line-height:1.45;
+}
+
+.medical-partnership-role span{
+  color:var(--v6-navy);
+  font-size:15px;
+  font-weight:900;
+}
+
+.medical-partnership-description{
+  max-width:790px;
+  margin:20px auto 0;
+  padding-top:18px;
+  border-top:1px solid rgba(16,45,82,.1);
+  color:var(--v6-muted);
+}
+
+.medical-partnership-description p{
+  margin:5px 0;
+  font-size:15px;
+  line-height:1.7;
+}
+
+@media(max-width:680px){
+  .medical-partnership-card{border-radius:22px}
+  .medical-partnership-copy{padding:27px 18px 30px}
+  .medical-partnership-kicker{font-size:10px;line-height:1.55}
+  .medical-partnership-copy h2{font-size:29px}
+  .medical-partnership-role{margin-top:16px}
+  .medical-partnership-role strong{font-size:18px}
+  .medical-partnership-role span{font-size:12px;line-height:1.5}
+  .medical-partnership-description{margin-top:16px;padding-top:14px}
+  .medical-partnership-description p{font-size:13px;line-height:1.65}
+}
+
 
 /* ===== V3.3 Contact and Supporters Upgrade ===== */
 .contact-layout{

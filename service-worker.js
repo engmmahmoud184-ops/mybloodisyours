@@ -1,4 +1,4 @@
-const CACHE_NAME = "myblood-pwa-v17-mobile-hero";
+const CACHE_NAME = "myblood-pwa-v18-medical-partnership";
 const OFFLINE_URL = "/offline.html";
 
 const APP_SHELL = [
@@ -26,7 +26,8 @@ const APP_SHELL = [
   "/assets/logo-maskable-512.png",
   "/assets/profile.png",
   "/assets/lebanon-coverage-map.png",
-  "/assets/hero-donation-center-v3.png"
+  "/assets/hero-donation-center-v3.png",
+  "/assets/bekaa-hospital-medical-partnership.webp"
 ];
 
 self.addEventListener("install", event => {
