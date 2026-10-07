@@ -1766,6 +1766,88 @@ textarea:focus-visible{
   .partnership-highlights strong{font-size:12px}
 }
 
+/* V22 — Bekaa partnership banner across donor search flow */
+.bekaa-partnership-banner[hidden]{display:none!important}
+
+.bekaa-partnership-banner{
+  width:min(100%,980px);
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;
+  align-items:center;
+  gap:18px;
+  margin:18px auto 24px;
+  padding:15px 18px;
+  overflow:hidden;
+  border:1px solid rgba(190,143,48,.42);
+  border-radius:21px;
+  background:
+    radial-gradient(circle at 96% 10%,rgba(231,195,110,.28),transparent 29%),
+    linear-gradient(135deg,#fffdf8 0%,#fff 48%,#f2f7fb 100%);
+  box-shadow:0 15px 38px rgba(16,45,82,.11),inset 0 3px 0 rgba(211,170,79,.62);
+}
+
+.bekaa-banner-brands{
+  min-width:170px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  padding:9px 12px;
+  border:1px solid rgba(16,45,82,.08);
+  border-radius:15px;
+  background:#fff;
+  box-shadow:0 7px 18px rgba(16,45,82,.07);
+}
+
+.bekaa-banner-brands img:first-child{width:105px;height:42px;object-fit:contain}
+.bekaa-banner-brands img:last-child{width:43px;height:43px;object-fit:contain}
+.bekaa-banner-brands span{color:#bd8d31;font-size:17px;font-weight:1000}
+
+.bekaa-banner-copy{min-width:0;display:flex;flex-direction:column}
+.bekaa-banner-kicker{color:#987026;font-size:9px;font-weight:1000;letter-spacing:.05em;text-transform:uppercase}
+.bekaa-banner-copy>strong{margin-top:4px;color:#102d52;font-size:18px;line-height:1.45}
+.bekaa-banner-copy p{margin:3px 0 0;color:#53657b;font-size:13px;font-weight:700;line-height:1.55}
+
+.bekaa-banner-gold{
+  width:92px;
+  min-height:82px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:8px;
+  border:1px solid #af7d25;
+  border-radius:17px;
+  background:linear-gradient(145deg,#fff0b8,#d9b457 58%,#b78127);
+  color:#4e3409;
+  text-align:center;
+  box-shadow:0 10px 24px rgba(139,96,20,.22),inset 0 1px 0 rgba(255,255,255,.75);
+}
+
+.bekaa-banner-gold>span{color:#79530f;font-size:20px;line-height:1}
+.bekaa-banner-gold strong{margin-top:4px;font-size:10px;line-height:1.25;white-space:nowrap}
+.bekaa-banner-gold small{margin-top:2px;font-size:7px;font-weight:1000;letter-spacing:.06em;text-transform:uppercase}
+
+@media(max-width:680px){
+  .bekaa-partnership-banner{
+    grid-template-columns:minmax(0,1fr) auto;
+    gap:10px;
+    margin:14px auto 18px;
+    padding:12px;
+    border-radius:17px;
+  }
+  .bekaa-banner-brands{grid-column:1/-1;min-width:0;padding:7px 10px}
+  .bekaa-banner-brands img:first-child{width:95px;height:35px}
+  .bekaa-banner-brands img:last-child{width:36px;height:36px}
+  .bekaa-banner-copy>strong{font-size:15px}
+  .bekaa-banner-copy p{font-size:11px;line-height:1.55}
+  .bekaa-banner-kicker{font-size:8px;line-height:1.45}
+  .bekaa-banner-gold{width:72px;min-height:70px;border-radius:14px}
+  .bekaa-banner-gold>span{font-size:16px}
+  .bekaa-banner-gold strong{font-size:8px}
+  .bekaa-banner-gold small{font-size:6px}
+}
+
 
 /* ===== V3.3 Contact and Supporters Upgrade ===== */
 .contact-layout{

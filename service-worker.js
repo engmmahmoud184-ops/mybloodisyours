@@ -1,4 +1,4 @@
-const CACHE_NAME = "myblood-pwa-v21-featured-partner";
+const CACHE_NAME = "myblood-pwa-v22-bekaa-search-partnership";
 const OFFLINE_URL = "/offline.html";
 
 const APP_SHELL = [
@@ -12,10 +12,13 @@ const APP_SHELL = [
   "/search-wizard.html",
   "/search.html",
   "/results.html",
+  "/menu.htm",
+  "/albekaa.html",
   "/add-yourself.html",
   "/styles.css",
   "/app.js",
   "/supporters.js",
+  "/partnership-banner.js",
   "/manifest.webmanifest",
   "/assets/logo.png",
   "/assets/logo-32.png",

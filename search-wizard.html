@@ -9,8 +9,9 @@
   <link rel="icon" href="assets/logo-32.png">
   <link rel="apple-touch-icon" href="assets/logo-192.png">
   <link rel="manifest" href="manifest.webmanifest">
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=22">
   <script src="app.js" defer></script>
+  <script src="partnership-banner.js?v=22" defer></script>
   <link rel="canonical" href="https://mybloodisyours.com/search-wizard.html">
   <meta property="og:title" content="Find a Blood Donor | My Blood Is Yours">
   <meta property="og:description" content="Find blood donors in Lebanon by region, town and blood type.">
@@ -169,6 +170,12 @@ function chooseRegion(regionId) {
   selectedRegion = REGIONS.find(region => region.id === regionId);
   selectedTown = null;
   selectedBlood = null;
+
+  if (window.updateBekaaPartnershipBanner) {
+    window.updateBekaaPartnershipBanner(
+      selectedRegion.region_key
+    );
+  }
 
   document.getElementById("townSearchInput").value = "";
   renderTowns(selectedRegion.towns);
