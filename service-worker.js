@@ -1,4 +1,4 @@
-const CACHE_NAME = "myblood-pwa-v20-gold-medical-partnership";
+const CACHE_NAME = "myblood-pwa-v21-featured-partner";
 const OFFLINE_URL = "/offline.html";
 
 const APP_SHELL = [
@@ -27,7 +27,8 @@ const APP_SHELL = [
   "/assets/profile.png",
   "/assets/lebanon-coverage-map.png",
   "/assets/hero-donation-center-v3.png",
-  "/assets/bekaa-hospital-medical-partnership.webp"
+  "/assets/bekaa-hospital-medical-partnership.webp",
+  "/assets/bekaa-hospital-logo.webp"
 ];
 
 self.addEventListener("install", event => {

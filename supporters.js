@@ -3,6 +3,20 @@
 
   const CONTRIBUTORS_PATH = "/Contributors.json";
 
+  const FEATURED_PARTNERS = [
+    {
+      id: "bekaa-hospital",
+      CompanyName: "Bekaa Hospital",
+      CompanyNameAr: "مستشفى البقاع",
+      Tier: "GOLD",
+      IsActive: true,
+      DisplayOrder: 0,
+      WebsiteUrl: "",
+      LogoUrl: "assets/bekaa-hospital-logo.webp",
+      Featured: true
+    }
+  ];
+
   function getValue(item, names, fallback = "") {
     for (const name of names) {
       if (
@@ -91,6 +105,23 @@
     };
   }
 
+  function mergeFeaturedPartners(contributors) {
+    const featuredNames = new Set(
+      FEATURED_PARTNERS.map(item =>
+        item.CompanyName.toLowerCase()
+      )
+    );
+
+    return [
+      ...FEATURED_PARTNERS,
+      ...contributors.filter(item =>
+        !featuredNames.has(
+          item.CompanyName.toLowerCase()
+        )
+      )
+    ];
+  }
+
   async function loadGoldenContributors() {
     const url =
       MyBloodApp.FIREBASE_URL +
@@ -108,14 +139,14 @@
 
     if (!response.ok) {
       throw new Error(
-        "Firebase returned HTTP " + response.status
+        "Supporters service returned HTTP " + response.status
       );
     }
 
     const data = await response.json();
 
     if (!data || typeof data !== "object") {
-      return [];
+      return FEATURED_PARTNERS;
     }
 
     const contributors = Object.entries(data)
@@ -142,7 +173,7 @@
       contributors
     );
 
-    return contributors;
+    return mergeFeaturedPartners(contributors);
   }
 
   function createCard(item, isClone = false) {
@@ -152,6 +183,12 @@
 
     card.className =
       "homepage-gold-contributor-card";
+
+    if (item.Featured) {
+      card.classList.add(
+        "is-featured-hospital"
+      );
+    }
 
     if (item.WebsiteUrl) {
       card.href = item.WebsiteUrl;
@@ -237,8 +274,9 @@
     tier.className =
       "homepage-gold-badge";
 
-    tier.textContent =
-      "GOLD | ذهبي";
+    tier.textContent = item.Featured
+      ? "★ GOLD SPONSOR | الراعي الذهبي"
+      : "GOLD | ذهبي";
 
     info.appendChild(tier);
     card.append(logoBox, info);
@@ -282,18 +320,10 @@
       return;
     }
 
-    track.className =
-      "v6-supporters-track is-centered";
-
-    track.innerHTML = `
-      <div class="v6-supporters-loading">
-        <span class="spinner"></span>
-        Loading supporters...
-        <span dir="rtl">
-          جاري تحميل الداعمين
-        </span>
-      </div>
-    `;
+    renderContributors(
+      track,
+      FEATURED_PARTNERS
+    );
 
     try {
       const contributors =
@@ -325,27 +355,10 @@
         error
       );
 
-      track.innerHTML = `
-        <div class="homepage-contributors-error">
-          <strong>
-            Unable to load supporters.
-          </strong>
-
-          <span dir="rtl">
-            تعذر تحميل الداعمين.
-          </span>
-
-          <button
-            type="button"
-            onclick="loadSupporters()">
-            Retry | إعادة المحاولة
-          </button>
-
-          <small>
-            ${String(error.message || error)}
-          </small>
-        </div>
-      `;
+      renderContributors(
+        track,
+        FEATURED_PARTNERS
+      );
     }
   }
 

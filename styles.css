@@ -5463,9 +5463,9 @@ textarea:focus-visible{
 }
 
 
-/* V8 — Firebase contributors image database */
+/* Public partners label */
 .home-v6 .v6-newsbar-label::after{
-  content:"Firebase";
+  content:"Partners";
   position:absolute;
   right:10px;
   bottom:8px;
@@ -5975,6 +5975,64 @@ textarea:focus-visible{
 
 .homepage-gold-details span{
   margin-top:2px;
+}
+
+/* V21 — Featured Bekaa Hospital gold sponsor */
+.v6-supporters .v6-heading p+p{
+  margin-top:3px;
+  font-size:15px;
+}
+
+.homepage-gold-contributor-card.is-featured-hospital{
+  position:relative;
+  overflow:hidden;
+  border-color:#c99d42;
+  background:
+    radial-gradient(circle at 92% 8%,rgba(231,195,110,.3),transparent 31%),
+    linear-gradient(145deg,#ffffff 0%,#fffaf0 56%,#f8ebc9 100%);
+  box-shadow:0 18px 45px rgba(138,98,26,.18),inset 0 4px 0 #d8b761;
+}
+
+.homepage-gold-contributor-card.is-featured-hospital::after{
+  content:"★";
+  position:absolute;
+  top:10px;
+  right:12px;
+  width:27px;
+  height:27px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border:1px solid rgba(255,255,255,.8);
+  border-radius:50%;
+  background:linear-gradient(145deg,#e7c777,#a97823);
+  color:#fff9df;
+  font-size:12px;
+  box-shadow:0 7px 16px rgba(125,86,18,.24);
+}
+
+.homepage-gold-contributor-card.is-featured-hospital .homepage-gold-logo{
+  border:1px solid rgba(201,157,66,.22);
+  box-shadow:0 8px 20px rgba(16,45,82,.06);
+}
+
+.homepage-gold-contributor-card.is-featured-hospital .homepage-gold-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:6px;
+  padding:5px 10px;
+  border-color:#c79a3b;
+  background:linear-gradient(135deg,#fff3bd,#dfbd66);
+  color:#61440f;
+  font-size:8px;
+  letter-spacing:.025em;
+  box-shadow:0 5px 13px rgba(147,105,26,.13);
+}
+
+.homepage-gold-contributor-card.is-featured-hospital:hover{
+  border-color:#b9872c;
+  box-shadow:0 23px 52px rgba(138,98,26,.23),inset 0 4px 0 #e1c675;
 }
 
 
