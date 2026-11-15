@@ -311,6 +311,10 @@ textarea{
   grid-template-columns:repeat(3,1fr);
 }
 
+.admin-calls-summary{
+  grid-template-columns:repeat(3,1fr);
+}
+
 .admin-summary-grid article{
   padding:20px;
   border:1px solid var(--admin-line);
@@ -759,6 +763,48 @@ body.admin-modal-open{
   color:var(--admin-navy-2);
   font-weight:800;
   text-decoration:none;
+}
+
+.admin-channel-badge,
+.admin-cooldown-badge{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:92px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:950;
+  white-space:nowrap;
+}
+
+.admin-channel-badge.call{
+  background:#eaf2ff;
+  color:#245b9b;
+}
+
+.admin-channel-badge.whatsapp{
+  background:#e8f8ef;
+  color:#137647;
+}
+
+.admin-channel-badge.legacy{
+  background:#f1eef9;
+  color:#65508d;
+}
+
+.admin-cooldown-badge.active{
+  background:#fff0f2;
+  color:var(--admin-red-dark);
+}
+
+.admin-cooldown-badge.expired{
+  background:#eef1f5;
+  color:var(--admin-muted);
+}
+
+.admin-calls-table{
+  min-width:760px;
 }
 
 .admin-blood-badge{

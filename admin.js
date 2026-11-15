@@ -16,12 +16,17 @@ const ADMIN_CONFIG = {
 let contributorsCache = {};
 let registrantsCache = {};
 let registrantsLoaded = false;
+let callsCache = {};
+let callsLoaded = false;
 let visibleRegistrantsCount = 50;
+let visibleCallsCount = 50;
 let visibleTownStatsCount = 50;
 let visibleDuplicateGroupsCount = 20;
 let townRegionLookup = new Map();
 
 const REGISTRANTS_PAGE_SIZE = 50;
+const CALLS_PAGE_SIZE = 50;
+const CONTACT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 const TOWN_STATS_PAGE_SIZE = 50;
 const DUPLICATE_GROUPS_PAGE_SIZE = 20;
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
@@ -130,6 +135,25 @@ function bindAdminEvents() {
     .addEventListener("click", () => {
       visibleRegistrantsCount += REGISTRANTS_PAGE_SIZE;
       renderRegistrants();
+    });
+
+  document
+    .getElementById("callsSearch")
+    .addEventListener("input", resetAndRenderCalls);
+
+  document
+    .getElementById("callsChannelFilter")
+    .addEventListener("change", resetAndRenderCalls);
+
+  document
+    .getElementById("callsPeriodFilter")
+    .addEventListener("change", resetAndRenderCalls);
+
+  document
+    .getElementById("loadMoreCallsButton")
+    .addEventListener("click", () => {
+      visibleCallsCount += CALLS_PAGE_SIZE;
+      renderCalls();
     });
 
   document
@@ -246,6 +270,8 @@ async function adminLogout() {
   contributorsCache = {};
   registrantsCache = {};
   registrantsLoaded = false;
+  callsCache = {};
+  callsLoaded = false;
   await firebase.auth().signOut();
 }
 
@@ -282,19 +308,32 @@ function showAdminSection(section) {
   const showTownStats = section === "townStats";
   const showRegionStats = section === "regionStats";
   const showDuplicatePhones = section === "duplicatePhones";
+  const showCalls = section === "calls";
   const showContributors =
-    !showRegistrants && !showTownStats && !showRegionStats && !showDuplicatePhones;
+    !showRegistrants && !showTownStats && !showRegionStats &&
+    !showDuplicatePhones && !showCalls;
 
   document.getElementById("contributorsView").hidden = !showContributors;
   document.getElementById("registrantsView").hidden = !showRegistrants;
   document.getElementById("townStatsView").hidden = !showTownStats;
   document.getElementById("regionStatsView").hidden = !showRegionStats;
   document.getElementById("duplicatePhonesView").hidden = !showDuplicatePhones;
+  document.getElementById("callsView").hidden = !showCalls;
   document.getElementById("contributorsNavButton").classList.toggle("is-active", showContributors);
   document.getElementById("registrantsNavButton").classList.toggle("is-active", showRegistrants);
   document.getElementById("townStatsNavButton").classList.toggle("is-active", showTownStats);
   document.getElementById("regionStatsNavButton").classList.toggle("is-active", showRegionStats);
   document.getElementById("duplicatePhonesNavButton").classList.toggle("is-active", showDuplicatePhones);
+  document.getElementById("callsNavButton").classList.toggle("is-active", showCalls);
+
+  if (showCalls) {
+    if (!callsLoaded) {
+      loadCalls();
+    } else {
+      renderCalls();
+    }
+    return;
+  }
 
   if (
     (showRegistrants || showTownStats || showRegionStats || showDuplicatePhones) &&
@@ -308,6 +347,172 @@ function showAdminSection(section) {
   } else if (showDuplicatePhones) {
     renderDuplicatePhones();
   }
+}
+
+async function loadCalls() {
+  const loading = document.getElementById("callsLoading");
+  loading.hidden = false;
+
+  try {
+    callsCache = await adminRequest("/AllCalls.json") || {};
+    callsLoaded = true;
+    visibleCallsCount = CALLS_PAGE_SIZE;
+    renderCalls();
+  } catch (error) {
+    callsCache = {};
+    callsLoaded = false;
+    renderCalls();
+    showToast("Unable to load contact history: " + error.message, "error");
+  } finally {
+    loading.hidden = true;
+  }
+}
+
+function resetAndRenderCalls() {
+  visibleCallsCount = CALLS_PAGE_SIZE;
+  renderCalls();
+}
+
+function getCallTimestamp(call) {
+  const isoTime = Date.parse(call?.Date || "");
+
+  if (Number.isFinite(isoTime)) {
+    return isoTime;
+  }
+
+  const parts = ["Year", "Month", "Day", "Hour", "Minute"]
+    .map(key => Number(call?.[key]));
+
+  if (parts.every(Number.isFinite)) {
+    return new Date(
+      parts[0],
+      parts[1] - 1,
+      parts[2],
+      parts[3],
+      parts[4]
+    ).getTime();
+  }
+
+  return NaN;
+}
+
+function getAllCallRecords() {
+  return Object.entries(callsCache)
+    .map(([id, call]) => ({ id, ...call, timestamp: getCallTimestamp(call) }))
+    .sort((first, second) => {
+      if (Number.isFinite(first.timestamp) && Number.isFinite(second.timestamp)) {
+        return second.timestamp - first.timestamp;
+      }
+      if (Number.isFinite(first.timestamp)) return -1;
+      if (Number.isFinite(second.timestamp)) return 1;
+      return String(second.id).localeCompare(String(first.id));
+    });
+}
+
+function getFilteredCalls() {
+  const search = document.getElementById("callsSearch").value
+    .trim().toLowerCase();
+  const channel = document.getElementById("callsChannelFilter").value;
+  const period = document.getElementById("callsPeriodFilter").value;
+  const now = Date.now();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const periodStarts = {
+    today: todayStart.getTime(),
+    "24h": now - CONTACT_COOLDOWN_MS,
+    "7d": now - (7 * 24 * 60 * 60 * 1000),
+    "30d": now - (30 * 24 * 60 * 60 * 1000)
+  };
+  const periodStart = periodStarts[period];
+
+  return getAllCallRecords().filter(call => {
+    const matchesSearch = !search || [call.To, call.From, call.Channel]
+      .join(" ").toLowerCase().includes(search);
+    const matchesChannel = !channel ||
+      call.Channel === channel ||
+      (channel === "legacy" && !["call", "whatsapp"].includes(call.Channel));
+    const matchesPeriod = period === "all" ||
+      (Number.isFinite(call.timestamp) && call.timestamp >= periodStart);
+
+    return matchesSearch && matchesChannel && matchesPeriod;
+  });
+}
+
+function renderCalls() {
+  const allCalls = getAllCallRecords();
+  const calls = getFilteredCalls();
+  const visibleCalls = calls.slice(0, visibleCallsCount);
+  const now = Date.now();
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  document.getElementById("callsHeaderTotal").textContent = allCalls.length;
+  document.getElementById("callsTotal").textContent = allCalls.length;
+  document.getElementById("callsToday").textContent = allCalls.filter(call =>
+    Number.isFinite(call.timestamp) && call.timestamp >= todayStart.getTime()
+  ).length;
+  document.getElementById("callsLast24Hours").textContent = allCalls.filter(call =>
+    Number.isFinite(call.timestamp) && call.timestamp >= now - CONTACT_COOLDOWN_MS
+  ).length;
+  document.getElementById("phoneCallsTotal").textContent = allCalls.filter(call =>
+    call.Channel === "call"
+  ).length;
+  document.getElementById("whatsappCallsTotal").textContent = allCalls.filter(call =>
+    call.Channel === "whatsapp"
+  ).length;
+  document.getElementById("legacyCallsTotal").textContent = allCalls.filter(call =>
+    !["call", "whatsapp"].includes(call.Channel)
+  ).length;
+
+  const empty = document.getElementById("callsEmpty");
+  const tableWrap = document.getElementById("callsTableWrap");
+  const pagination = document.getElementById("callsPagination");
+  const body = document.getElementById("callsTableBody");
+
+  empty.hidden = calls.length > 0;
+  tableWrap.hidden = calls.length === 0;
+  pagination.hidden = calls.length === 0;
+
+  body.innerHTML = visibleCalls.map((call, index) => {
+    const isActive = ["call", "whatsapp"].includes(call.Channel) &&
+      Number.isFinite(call.timestamp) &&
+      call.timestamp >= now - CONTACT_COOLDOWN_MS;
+    const remainingHours = isActive
+      ? Math.max(1, Math.ceil((call.timestamp + CONTACT_COOLDOWN_MS - now) / 3600000))
+      : 0;
+    const isWhatsApp = call.Channel === "whatsapp";
+    const isPhoneCall = call.Channel === "call";
+    const channelLabel = isWhatsApp
+      ? "WhatsApp"
+      : isPhoneCall ? "Phone Call" : "Legacy / Unknown";
+    const channelClass = isWhatsApp
+      ? "whatsapp"
+      : isPhoneCall ? "call" : "legacy";
+    const dateLabel = Number.isFinite(call.timestamp)
+      ? registrantDateFormatter.format(new Date(call.timestamp))
+      : "Date unavailable";
+    const phone = String(call.To || "");
+
+    return `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${escapeAdminHtml(dateLabel)}</td>
+        <td><span class="admin-channel-badge ${channelClass}">${channelLabel}</span></td>
+        <td><a href="tel:${escapeAdminHtml(phone)}">${escapeAdminHtml(phone || "—")}</a></td>
+        <td>
+          <span class="admin-cooldown-badge ${isActive ? "active" : "expired"}">
+            ${isActive ? remainingHours + "h remaining" : "Expired"}
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  document.getElementById("callsProgress").textContent =
+    "Showing " + visibleCalls.length + " of " + calls.length + " contacts";
+  document.getElementById("loadMoreCallsButton").hidden =
+    visibleCalls.length >= calls.length;
 }
 
 async function loadRegistrants() {

@@ -98,6 +98,11 @@
           <span>🔗</span>
           Duplicate Phones
         </button>
+
+        <button id="callsNavButton" type="button" onclick="showAdminSection('calls')">
+          <span>☎️</span>
+          Contact History
+        </button>
       </nav>
 
       <div class="admin-sidebar-footer">
@@ -503,6 +508,111 @@
             id="loadMoreDuplicatePhonesButton"
             class="admin-secondary-button"
             type="button">
+            Show more | عرض المزيد
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <main id="callsView" class="admin-main" hidden>
+      <header class="admin-topbar">
+        <div>
+          <span>My Blood Is Yours</span>
+          <h1>Contact History | سجل الاتصالات</h1>
+          <p>All confirmed calls and WhatsApp contacts, ordered from newest to oldest.</p>
+        </div>
+
+        <div class="admin-registrants-total">
+          <span>Total contacts</span>
+          <strong id="callsHeaderTotal">0</strong>
+        </div>
+      </header>
+
+      <section class="admin-summary-grid admin-calls-summary">
+        <article>
+          <span>All Contacts</span>
+          <strong id="callsTotal">0</strong>
+          <small>Since tracking started</small>
+        </article>
+        <article>
+          <span>Today</span>
+          <strong id="callsToday">0</strong>
+          <small>Calendar day</small>
+        </article>
+        <article>
+          <span>Last 24 Hours</span>
+          <strong id="callsLast24Hours">0</strong>
+          <small>Donor cooldown period</small>
+        </article>
+        <article>
+          <span>Phone Calls</span>
+          <strong id="phoneCallsTotal">0</strong>
+          <small>Call button contacts</small>
+        </article>
+        <article>
+          <span>WhatsApp</span>
+          <strong id="whatsappCallsTotal">0</strong>
+          <small>WhatsApp contacts</small>
+        </article>
+        <article>
+          <span>Legacy / Unknown</span>
+          <strong id="legacyCallsTotal">0</strong>
+          <small>Older records without channel</small>
+        </article>
+      </section>
+
+      <section class="admin-content-card">
+        <div class="admin-content-header">
+          <div>
+            <h2>All Contact Records</h2>
+            <p>جميع عمليات الاتصال والتواصل عبر واتساب</p>
+          </div>
+
+          <div class="admin-filter-row admin-calls-filters">
+            <input id="callsSearch" type="search" placeholder="Search phone number">
+            <select id="callsChannelFilter">
+              <option value="">All channels</option>
+              <option value="call">Phone calls</option>
+              <option value="whatsapp">WhatsApp</option>
+              <option value="legacy">Legacy / Unknown</option>
+            </select>
+            <select id="callsPeriodFilter">
+              <option value="all">All dates</option>
+              <option value="today">Today</option>
+              <option value="24h">Last 24 hours</option>
+              <option value="7d">Last 7 days</option>
+              <option value="30d">Last 30 days</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="callsLoading" class="admin-loading" hidden>
+          Loading contact history...
+        </div>
+
+        <div id="callsEmpty" class="admin-empty" hidden>
+          <strong>No contact records found.</strong>
+          <span>لا توجد اتصالات مطابقة للفلاتر المختارة.</span>
+        </div>
+
+        <div id="callsTableWrap" class="admin-table-wrap" hidden>
+          <table class="admin-registrants-table admin-calls-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Date &amp; Time</th>
+                <th>Channel</th>
+                <th>Donor Phone</th>
+                <th>24h Status</th>
+              </tr>
+            </thead>
+            <tbody id="callsTableBody"></tbody>
+          </table>
+        </div>
+
+        <div id="callsPagination" class="admin-pagination" hidden>
+          <span id="callsProgress"></span>
+          <button id="loadMoreCallsButton" class="admin-secondary-button" type="button">
             Show more | عرض المزيد
           </button>
         </div>
