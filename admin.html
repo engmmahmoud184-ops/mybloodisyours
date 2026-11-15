@@ -81,6 +81,11 @@
           <span>🩸</span>
           Registered Donors
         </button>
+
+        <button id="townStatsNavButton" type="button" onclick="showAdminSection('townStats')">
+          <span>📊</span>
+          Town Statistics
+        </button>
       </nav>
 
       <div class="admin-sidebar-footer">
@@ -232,6 +237,110 @@
           <span id="registrantsProgress"></span>
           <button
             id="loadMoreRegistrantsButton"
+            class="admin-secondary-button"
+            type="button">
+            Show more | عرض المزيد
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <main id="townStatsView" class="admin-main" hidden>
+      <header class="admin-topbar">
+        <div>
+          <span>My Blood Is Yours</span>
+          <h1>Town Statistics | إحصائيات البلدات</h1>
+          <p>Registration totals and blood-type distribution for every town.</p>
+        </div>
+      </header>
+
+      <section class="admin-summary-grid admin-town-summary">
+        <article>
+          <span>People</span>
+          <strong id="townStatsPeopleTotal">0</strong>
+          <small>Total Registered</small>
+        </article>
+
+        <article>
+          <span>Towns</span>
+          <strong id="townStatsTownsTotal">0</strong>
+          <small>Towns With Registrations</small>
+        </article>
+
+        <article>
+          <span>Regions</span>
+          <strong id="townStatsRegionsTotal">0</strong>
+          <small>Covered Regions</small>
+        </article>
+
+        <article>
+          <span>Top Town</span>
+          <strong id="townStatsTopTown" class="admin-summary-name">—</strong>
+          <small id="townStatsTopTownCount">0 registered</small>
+        </article>
+      </section>
+
+      <section id="bloodTypeSummary" class="admin-blood-summary"></section>
+
+      <section class="admin-content-card">
+        <div class="admin-content-header">
+          <div>
+            <h2>Statistics by Town</h2>
+            <p>عدد المسجلين وتوزيع فئات الدم في كل بلدة</p>
+          </div>
+
+          <div class="admin-filter-row admin-stats-filters">
+            <input
+              id="townStatsSearch"
+              type="search"
+              placeholder="Search town or region">
+
+            <select id="townStatsRegionFilter">
+              <option value="">All regions</option>
+            </select>
+
+            <select id="townStatsSort">
+              <option value="total-desc">Most registered</option>
+              <option value="town-asc">Town A–Z</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="townStatsLoading" class="admin-loading" hidden>
+          Loading town statistics...
+        </div>
+
+        <div id="townStatsEmpty" class="admin-empty" hidden>
+          <strong>No town statistics found.</strong>
+          <span>Try changing the search or region filter.</span>
+        </div>
+
+        <div id="townStatsTableWrap" class="admin-table-wrap" hidden>
+          <table class="admin-registrants-table admin-town-stats-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Town</th>
+                <th>Region</th>
+                <th>Total</th>
+                <th>A+</th>
+                <th>A-</th>
+                <th>B+</th>
+                <th>B-</th>
+                <th>AB+</th>
+                <th>AB-</th>
+                <th>O+</th>
+                <th>O-</th>
+              </tr>
+            </thead>
+            <tbody id="townStatsTableBody"></tbody>
+          </table>
+        </div>
+
+        <div id="townStatsPagination" class="admin-pagination" hidden>
+          <span id="townStatsProgress"></span>
+          <button
+            id="loadMoreTownStatsButton"
             class="admin-secondary-button"
             type="button">
             Show more | عرض المزيد

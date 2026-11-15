@@ -10,8 +10,11 @@ let contributorsCache = {};
 let registrantsCache = {};
 let registrantsLoaded = false;
 let visibleRegistrantsCount = 50;
+let visibleTownStatsCount = 50;
 
 const REGISTRANTS_PAGE_SIZE = 50;
+const TOWN_STATS_PAGE_SIZE = 50;
+const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const registrantDateFormatter = new Intl.DateTimeFormat("en-LB", {
   dateStyle: "medium",
   timeStyle: "short"
@@ -76,6 +79,25 @@ function bindAdminEvents() {
     .addEventListener("click", () => {
       visibleRegistrantsCount += REGISTRANTS_PAGE_SIZE;
       renderRegistrants();
+    });
+
+  document
+    .getElementById("townStatsSearch")
+    .addEventListener("input", resetAndRenderTownStats);
+
+  document
+    .getElementById("townStatsRegionFilter")
+    .addEventListener("change", resetAndRenderTownStats);
+
+  document
+    .getElementById("townStatsSort")
+    .addEventListener("change", resetAndRenderTownStats);
+
+  document
+    .getElementById("loadMoreTownStatsButton")
+    .addEventListener("click", () => {
+      visibleTownStatsCount += TOWN_STATS_PAGE_SIZE;
+      renderTownStats();
     });
 
   document
@@ -160,34 +182,185 @@ function showDashboard() {
 
 function showAdminSection(section) {
   const showRegistrants = section === "registrants";
+  const showTownStats = section === "townStats";
+  const showContributors = !showRegistrants && !showTownStats;
 
-  document.getElementById("contributorsView").hidden = showRegistrants;
+  document.getElementById("contributorsView").hidden = !showContributors;
   document.getElementById("registrantsView").hidden = !showRegistrants;
-  document.getElementById("contributorsNavButton").classList.toggle("is-active", !showRegistrants);
+  document.getElementById("townStatsView").hidden = !showTownStats;
+  document.getElementById("contributorsNavButton").classList.toggle("is-active", showContributors);
   document.getElementById("registrantsNavButton").classList.toggle("is-active", showRegistrants);
+  document.getElementById("townStatsNavButton").classList.toggle("is-active", showTownStats);
 
-  if (showRegistrants && !registrantsLoaded) {
+  if ((showRegistrants || showTownStats) && !registrantsLoaded) {
     loadRegistrants();
+  } else if (showTownStats) {
+    renderTownStats();
   }
 }
 
 async function loadRegistrants() {
   const loading = document.getElementById("registrantsLoading");
+  const statsLoading = document.getElementById("townStatsLoading");
 
   loading.hidden = false;
+  statsLoading.hidden = false;
 
   try {
     registrantsCache = await MyBloodApp.request("/Persons.json") || {};
     registrantsLoaded = true;
     visibleRegistrantsCount = REGISTRANTS_PAGE_SIZE;
+    visibleTownStatsCount = TOWN_STATS_PAGE_SIZE;
+    populateTownStatsRegions();
     renderRegistrants();
+    renderTownStats();
   } catch (error) {
     registrantsCache = {};
     renderRegistrants();
+    renderTownStats();
     showToast("Unable to load registered donors: " + error.message, "error");
   } finally {
     loading.hidden = true;
+    statsLoading.hidden = true;
   }
+}
+
+function resetAndRenderTownStats() {
+  visibleTownStatsCount = TOWN_STATS_PAGE_SIZE;
+  renderTownStats();
+}
+
+function getTownStatistics() {
+  const towns = new Map();
+
+  Object.values(registrantsCache).forEach(registrant => {
+    if (!registrant || typeof registrant !== "object") return;
+
+    const town = String(registrant.Location || "Unknown town").trim() || "Unknown town";
+    const region = String(registrant.Region || "Unknown region").trim() || "Unknown region";
+    const key = region.toLowerCase() + "::" + town.toLowerCase();
+
+    if (!towns.has(key)) {
+      towns.set(key, {
+        town,
+        region,
+        total: 0,
+        bloodTypes: Object.fromEntries(BLOOD_TYPES.map(type => [type, 0]))
+      });
+    }
+
+    const item = towns.get(key);
+    const bloodType = String(registrant.BloodType || "").trim().toUpperCase();
+
+    item.total += 1;
+
+    if (Object.hasOwn(item.bloodTypes, bloodType)) {
+      item.bloodTypes[bloodType] += 1;
+    }
+  });
+
+  return Array.from(towns.values());
+}
+
+function getFilteredTownStatistics() {
+  const search = document.getElementById("townStatsSearch").value.trim().toLowerCase();
+  const region = document.getElementById("townStatsRegionFilter").value;
+  const sort = document.getElementById("townStatsSort").value;
+
+  return getTownStatistics()
+    .filter(item => {
+      const matchesSearch = !search ||
+        (item.town + " " + item.region).toLowerCase().includes(search);
+      const matchesRegion = !region || item.region === region;
+      return matchesSearch && matchesRegion;
+    })
+    .sort((first, second) => {
+      if (sort === "town-asc") {
+        return first.town.localeCompare(second.town, undefined, { sensitivity: "base" });
+      }
+
+      return second.total - first.total ||
+        first.town.localeCompare(second.town, undefined, { sensitivity: "base" });
+    });
+}
+
+function populateTownStatsRegions() {
+  const select = document.getElementById("townStatsRegionFilter");
+  const currentValue = select.value;
+  const regions = [...new Set(
+    Object.values(registrantsCache)
+      .filter(item => item && typeof item === "object")
+      .map(item => String(item.Region || "Unknown region").trim() || "Unknown region")
+  )].sort((first, second) => first.localeCompare(second));
+
+  select.innerHTML = '<option value="">All regions</option>';
+
+  regions.forEach(region => {
+    const option = document.createElement("option");
+    option.value = region;
+    option.textContent = region;
+    select.appendChild(option);
+  });
+
+  if (regions.includes(currentValue)) select.value = currentValue;
+}
+
+function renderTownStats() {
+  const stats = getFilteredTownStatistics();
+  const visibleStats = stats.slice(0, visibleTownStatsCount);
+  const body = document.getElementById("townStatsTableBody");
+  const empty = document.getElementById("townStatsEmpty");
+  const tableWrap = document.getElementById("townStatsTableWrap");
+  const pagination = document.getElementById("townStatsPagination");
+  const loadMoreButton = document.getElementById("loadMoreTownStatsButton");
+
+  body.innerHTML = "";
+  empty.hidden = stats.length > 0;
+  tableWrap.hidden = stats.length === 0;
+  pagination.hidden = stats.length === 0;
+
+  visibleStats.forEach((item, index) => {
+    const row = document.createElement("tr");
+
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td><strong>${escapeAdminHtml(item.town)}</strong></td>
+      <td>${escapeAdminHtml(item.region)}</td>
+      <td><span class="admin-total-badge">${item.total}</span></td>
+      ${BLOOD_TYPES.map(type => `<td>${item.bloodTypes[type]}</td>`).join("")}
+    `;
+
+    body.appendChild(row);
+  });
+
+  document.getElementById("townStatsProgress").textContent =
+    "Showing " + visibleStats.length + " of " + stats.length + " towns";
+  loadMoreButton.hidden = visibleStats.length >= stats.length;
+
+  renderTownStatsSummary(stats);
+}
+
+function renderTownStatsSummary(stats) {
+  const peopleTotal = stats.reduce((sum, item) => sum + item.total, 0);
+  const regionsTotal = new Set(stats.map(item => item.region)).size;
+  const topTown = [...stats].sort((a, b) => b.total - a.total)[0];
+
+  document.getElementById("townStatsPeopleTotal").textContent = peopleTotal;
+  document.getElementById("townStatsTownsTotal").textContent = stats.length;
+  document.getElementById("townStatsRegionsTotal").textContent = regionsTotal;
+  document.getElementById("townStatsTopTown").textContent = topTown?.town || "—";
+  document.getElementById("townStatsTopTownCount").textContent =
+    (topTown?.total || 0) + " registered";
+
+  const bloodSummary = document.getElementById("bloodTypeSummary");
+  bloodSummary.innerHTML = "";
+
+  BLOOD_TYPES.forEach(type => {
+    const total = stats.reduce((sum, item) => sum + item.bloodTypes[type], 0);
+    const card = document.createElement("article");
+    card.innerHTML = `<span>${type}</span><strong>${total}</strong>`;
+    bloodSummary.appendChild(card);
+  });
 }
 
 function getSortedRegistrants() {
