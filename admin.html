@@ -86,6 +86,11 @@
           <span>📊</span>
           Town Statistics
         </button>
+
+        <button id="duplicatePhonesNavButton" type="button" onclick="showAdminSection('duplicatePhones')">
+          <span>🔗</span>
+          Duplicate Phones
+        </button>
       </nav>
 
       <div class="admin-sidebar-footer">
@@ -341,6 +346,73 @@
           <span id="townStatsProgress"></span>
           <button
             id="loadMoreTownStatsButton"
+            class="admin-secondary-button"
+            type="button">
+            Show more | عرض المزيد
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <main id="duplicatePhonesView" class="admin-main" hidden>
+      <header class="admin-topbar">
+        <div>
+          <span>My Blood Is Yours</span>
+          <h1>Duplicate Phone Numbers | الأرقام المكررة</h1>
+          <p>Review registrations sharing the same phone number and merge duplicate records safely.</p>
+        </div>
+      </header>
+
+      <section class="admin-summary-grid admin-duplicates-summary">
+        <article>
+          <span>Duplicate Numbers</span>
+          <strong id="duplicatePhoneGroupsTotal">0</strong>
+          <small>Phone Numbers To Review</small>
+        </article>
+
+        <article>
+          <span>Duplicate Records</span>
+          <strong id="duplicateRecordsTotal">0</strong>
+          <small>Registrations In These Groups</small>
+        </article>
+
+        <article>
+          <span>Can Be Removed</span>
+          <strong id="removableRecordsTotal">0</strong>
+          <small>Extra Copies After Merge</small>
+        </article>
+      </section>
+
+      <section class="admin-content-card">
+        <div class="admin-content-header">
+          <div>
+            <h2>Registrations With The Same Phone</h2>
+            <p>يتم توحيد صيغ أرقام الهاتف قبل المقارنة</p>
+          </div>
+
+          <div class="admin-filter-row">
+            <input
+              id="duplicatePhonesSearch"
+              type="search"
+              placeholder="Search phone, name, town, or blood type">
+          </div>
+        </div>
+
+        <div id="duplicatePhonesLoading" class="admin-loading" hidden>
+          Checking duplicate phone numbers...
+        </div>
+
+        <div id="duplicatePhonesEmpty" class="admin-empty" hidden>
+          <strong>No duplicate phone numbers found.</strong>
+          <span>لا توجد سجلات متعددة تحمل رقم الهاتف نفسه.</span>
+        </div>
+
+        <div id="duplicatePhonesList" class="admin-duplicates-list"></div>
+
+        <div id="duplicatePhonesPagination" class="admin-pagination" hidden>
+          <span id="duplicatePhonesProgress"></span>
+          <button
+            id="loadMoreDuplicatePhonesButton"
             class="admin-secondary-button"
             type="button">
             Show more | عرض المزيد

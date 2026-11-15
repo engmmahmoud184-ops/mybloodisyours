@@ -11,9 +11,11 @@ let registrantsCache = {};
 let registrantsLoaded = false;
 let visibleRegistrantsCount = 50;
 let visibleTownStatsCount = 50;
+let visibleDuplicateGroupsCount = 20;
 
 const REGISTRANTS_PAGE_SIZE = 50;
 const TOWN_STATS_PAGE_SIZE = 50;
+const DUPLICATE_GROUPS_PAGE_SIZE = 20;
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
 const registrantDateFormatter = new Intl.DateTimeFormat("en-LB", {
   dateStyle: "medium",
@@ -101,6 +103,20 @@ function bindAdminEvents() {
     });
 
   document
+    .getElementById("duplicatePhonesSearch")
+    .addEventListener("input", () => {
+      visibleDuplicateGroupsCount = DUPLICATE_GROUPS_PAGE_SIZE;
+      renderDuplicatePhones();
+    });
+
+  document
+    .getElementById("loadMoreDuplicatePhonesButton")
+    .addEventListener("click", () => {
+      visibleDuplicateGroupsCount += DUPLICATE_GROUPS_PAGE_SIZE;
+      renderDuplicatePhones();
+    });
+
+  document
     .getElementById("contributorModal")
     .addEventListener("click", event => {
       if (event.target.id === "contributorModal") {
@@ -183,46 +199,265 @@ function showDashboard() {
 function showAdminSection(section) {
   const showRegistrants = section === "registrants";
   const showTownStats = section === "townStats";
-  const showContributors = !showRegistrants && !showTownStats;
+  const showDuplicatePhones = section === "duplicatePhones";
+  const showContributors = !showRegistrants && !showTownStats && !showDuplicatePhones;
 
   document.getElementById("contributorsView").hidden = !showContributors;
   document.getElementById("registrantsView").hidden = !showRegistrants;
   document.getElementById("townStatsView").hidden = !showTownStats;
+  document.getElementById("duplicatePhonesView").hidden = !showDuplicatePhones;
   document.getElementById("contributorsNavButton").classList.toggle("is-active", showContributors);
   document.getElementById("registrantsNavButton").classList.toggle("is-active", showRegistrants);
   document.getElementById("townStatsNavButton").classList.toggle("is-active", showTownStats);
+  document.getElementById("duplicatePhonesNavButton").classList.toggle("is-active", showDuplicatePhones);
 
-  if ((showRegistrants || showTownStats) && !registrantsLoaded) {
+  if ((showRegistrants || showTownStats || showDuplicatePhones) && !registrantsLoaded) {
     loadRegistrants();
   } else if (showTownStats) {
     renderTownStats();
+  } else if (showDuplicatePhones) {
+    renderDuplicatePhones();
   }
 }
 
 async function loadRegistrants() {
   const loading = document.getElementById("registrantsLoading");
   const statsLoading = document.getElementById("townStatsLoading");
+  const duplicatesLoading = document.getElementById("duplicatePhonesLoading");
 
   loading.hidden = false;
   statsLoading.hidden = false;
+  duplicatesLoading.hidden = false;
 
   try {
     registrantsCache = await MyBloodApp.request("/Persons.json") || {};
     registrantsLoaded = true;
     visibleRegistrantsCount = REGISTRANTS_PAGE_SIZE;
     visibleTownStatsCount = TOWN_STATS_PAGE_SIZE;
+    visibleDuplicateGroupsCount = DUPLICATE_GROUPS_PAGE_SIZE;
     populateTownStatsRegions();
     renderRegistrants();
     renderTownStats();
+    renderDuplicatePhones();
   } catch (error) {
     registrantsCache = {};
     renderRegistrants();
     renderTownStats();
+    renderDuplicatePhones();
     showToast("Unable to load registered donors: " + error.message, "error");
   } finally {
     loading.hidden = true;
     statsLoading.hidden = true;
+    duplicatesLoading.hidden = true;
   }
+}
+
+function getDuplicatePhoneGroups() {
+  const phoneGroups = new Map();
+
+  Object.entries(registrantsCache).forEach(([id, registrant]) => {
+    if (!registrant || typeof registrant !== "object") return;
+
+    const rawPhone = String(registrant.PhoneNumber || "").trim();
+
+    if (!MyBloodApp.isValidLebanonPhone(rawPhone)) return;
+
+    const normalizedPhone = MyBloodApp.normalizeLebanonPhone(rawPhone);
+
+    if (!phoneGroups.has(normalizedPhone)) {
+      phoneGroups.set(normalizedPhone, []);
+    }
+
+    phoneGroups.get(normalizedPhone).push({ id, ...registrant });
+  });
+
+  return Array.from(phoneGroups.entries())
+    .filter(([, records]) => records.length > 1)
+    .map(([phone, records]) => ({
+      phone,
+      records: records.sort(compareRegistrantsNewestFirst)
+    }))
+    .sort((first, second) =>
+      second.records.length - first.records.length ||
+      first.phone.localeCompare(second.phone)
+    );
+}
+
+function compareRegistrantsNewestFirst(first, second) {
+  const firstTime = Date.parse(first.CreatedAt || "");
+  const secondTime = Date.parse(second.CreatedAt || "");
+
+  if (Number.isFinite(firstTime) && Number.isFinite(secondTime)) {
+    return secondTime - firstTime;
+  }
+
+  if (Number.isFinite(firstTime)) return -1;
+  if (Number.isFinite(secondTime)) return 1;
+  return String(second.id).localeCompare(String(first.id));
+}
+
+function renderDuplicatePhones() {
+  const search = document
+    .getElementById("duplicatePhonesSearch")
+    .value.trim().toLowerCase();
+  const allGroups = getDuplicatePhoneGroups();
+  const groups = allGroups.filter(group => {
+    const text = [
+      group.phone,
+      ...group.records.flatMap(record => [
+        record.PhoneNumber,
+        record.FullName,
+        record.BloodType,
+        record.Region,
+        record.Location
+      ])
+    ].join(" ").toLowerCase();
+
+    return !search || text.includes(search);
+  });
+  const list = document.getElementById("duplicatePhonesList");
+  const empty = document.getElementById("duplicatePhonesEmpty");
+  const pagination = document.getElementById("duplicatePhonesPagination");
+  const loadMoreButton = document.getElementById("loadMoreDuplicatePhonesButton");
+  const visibleGroups = groups.slice(0, visibleDuplicateGroupsCount);
+  const duplicateRecords = allGroups.reduce((sum, group) => sum + group.records.length, 0);
+
+  document.getElementById("duplicatePhoneGroupsTotal").textContent = allGroups.length;
+  document.getElementById("duplicateRecordsTotal").textContent = duplicateRecords;
+  document.getElementById("removableRecordsTotal").textContent =
+    duplicateRecords - allGroups.length;
+
+  list.innerHTML = "";
+  empty.hidden = groups.length > 0;
+  pagination.hidden = groups.length === 0;
+
+  visibleGroups.forEach(group => list.appendChild(createDuplicatePhoneCard(group)));
+
+  document.getElementById("duplicatePhonesProgress").textContent =
+    "Showing " + visibleGroups.length + " of " + groups.length + " duplicate numbers";
+  loadMoreButton.hidden = visibleGroups.length >= groups.length;
+}
+
+function createDuplicatePhoneCard(group) {
+  const card = document.createElement("article");
+  card.className = "admin-duplicate-card";
+
+  const header = document.createElement("div");
+  header.className = "admin-duplicate-header";
+  header.innerHTML = `
+    <div>
+      <span>Normalized phone</span>
+      <strong>+${escapeAdminHtml(group.phone)}</strong>
+      <small>${group.records.length} matching registrations</small>
+    </div>
+  `;
+
+  const mergeButton = document.createElement("button");
+  mergeButton.className = "admin-primary-button";
+  mergeButton.type = "button";
+  mergeButton.textContent = "Merge records | دمج السجلات";
+  mergeButton.addEventListener("click", () => mergeDuplicatePhoneGroup(group, mergeButton));
+  header.appendChild(mergeButton);
+  card.appendChild(header);
+
+  const records = document.createElement("div");
+  records.className = "admin-duplicate-records";
+
+  group.records.forEach((record, index) => {
+    const item = document.createElement("div");
+    item.className = "admin-duplicate-record" + (index === 0 ? " is-kept" : "");
+    item.innerHTML = `
+      <div class="admin-duplicate-record-title">
+        <strong>${escapeAdminHtml(record.FullName || "Unnamed")}</strong>
+        <span>${index === 0 ? "Will be kept" : "Will be merged"}</span>
+      </div>
+      <dl>
+        <div><dt>Original phone</dt><dd>${escapeAdminHtml(record.PhoneNumber || "—")}</dd></div>
+        <div><dt>Blood type</dt><dd>${escapeAdminHtml(record.BloodType || "—")}</dd></div>
+        <div><dt>Region</dt><dd>${escapeAdminHtml(record.Region || "—")}</dd></div>
+        <div><dt>Town</dt><dd>${escapeAdminHtml(record.Location || "—")}</dd></div>
+        <div><dt>Registered</dt><dd>${escapeAdminHtml(formatRegistrantDate(record.CreatedAt))}</dd></div>
+      </dl>
+    `;
+    records.appendChild(item);
+  });
+
+  card.appendChild(records);
+  return card;
+}
+
+async function mergeDuplicatePhoneGroup(group, button) {
+  const keeper = group.records[0];
+  const duplicates = group.records.slice(1);
+  const confirmed = window.confirm(
+    "Merge " + group.records.length + " registrations for +" + group.phone +
+    "? The newest record will be kept and " + duplicates.length +
+    " duplicate record(s) will be deleted."
+  );
+
+  if (!confirmed) return;
+
+  const mergedRecord = buildMergedRegistrant(group.records);
+  const updates = { [keeper.id]: mergedRecord };
+
+  duplicates.forEach(record => {
+    updates[record.id] = null;
+  });
+
+  button.disabled = true;
+  button.textContent = "Merging...";
+
+  try {
+    await MyBloodApp.request("/Persons.json", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates)
+    });
+
+    registrantsCache[keeper.id] = mergedRecord;
+    duplicates.forEach(record => delete registrantsCache[record.id]);
+
+    renderRegistrants();
+    populateTownStatsRegions();
+    renderTownStats();
+    renderDuplicatePhones();
+    showToast("Duplicate registrations merged successfully.", "success");
+  } catch (error) {
+    button.disabled = false;
+    button.textContent = "Merge records | دمج السجلات";
+    showToast("Unable to merge records: " + error.message, "error");
+  }
+}
+
+function buildMergedRegistrant(records) {
+  const keeper = { ...records[0] };
+  const mergeableFields = [
+    "FullName",
+    "PhoneNumber",
+    "BloodType",
+    "BirthYear",
+    "Location",
+    "Region",
+    "CreatedAt",
+    "Source"
+  ];
+
+  delete keeper.id;
+
+  mergeableFields.forEach(field => {
+    if (keeper[field] !== undefined && keeper[field] !== null && keeper[field] !== "") return;
+
+    const fallback = records.find(record =>
+      record[field] !== undefined && record[field] !== null && record[field] !== ""
+    );
+
+    if (fallback) keeper[field] = fallback[field];
+  });
+
+  keeper.MergedAt = new Date().toISOString();
+  keeper.MergedBy = ADMIN_CONFIG.username;
+  keeper.MergedRecordCount = records.length;
+  return keeper;
 }
 
 function resetAndRenderTownStats() {
