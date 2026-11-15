@@ -19,11 +19,24 @@ let registrantsLoaded = false;
 let visibleRegistrantsCount = 50;
 let visibleTownStatsCount = 50;
 let visibleDuplicateGroupsCount = 20;
+let townRegionLookup = new Map();
 
 const REGISTRANTS_PAGE_SIZE = 50;
 const TOWN_STATS_PAGE_SIZE = 50;
 const DUPLICATE_GROUPS_PAGE_SIZE = 20;
 const BLOOD_TYPES = ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"];
+const REGION_REPAIR_OVERRIDES = {
+  "AlManara": "AlBekaa",
+  "Haret Hreik": "MountLebanon",
+  "Dekwaneh": "MountLebanon",
+  "Mkalles": "MountLebanon",
+  "Mhaydthe": "AlBekaa",
+  "Kfour": "Nabttieh",
+  "Chyah": "MountLebanon",
+  "KamedAllawz": "AlBekaa",
+  "RasAlmatn": "MountLebanon",
+  "Koubbeih": "MountLebanon"
+};
 const registrantDateFormatter = new Intl.DateTimeFormat("en-LB", {
   dateStyle: "medium",
   timeStyle: "short"
@@ -310,6 +323,7 @@ async function loadRegistrants() {
 
   try {
     registrantsCache = await adminRequest("/Persons.json") || {};
+    await loadTownRegionLookup();
     registrantsLoaded = true;
     visibleRegistrantsCount = REGISTRANTS_PAGE_SIZE;
     visibleTownStatsCount = TOWN_STATS_PAGE_SIZE;
@@ -683,8 +697,7 @@ function getRegionStatistics() {
   Object.values(registrantsCache).forEach(registrant => {
     if (!registrant || typeof registrant !== "object") return;
 
-    const region =
-      String(registrant.Region || "Unknown region").trim() || "Unknown region";
+    const region = resolveRegistrantRegion(registrant);
     const key = region.toLowerCase();
 
     if (!regions.has(key)) {
@@ -706,6 +719,142 @@ function getRegionStatistics() {
   });
 
   return Array.from(regions.values());
+}
+
+async function loadTownRegionLookup() {
+  if (townRegionLookup.size) return;
+
+  try {
+    const response = await fetch("add-yourself.html", { cache: "no-store" });
+
+    if (!response.ok) {
+      throw new Error("Unable to load the official town list.");
+    }
+
+    const source = await response.text();
+    const match = source.match(
+      /const REGIONS = (\[[\s\S]*?\]);\s*document\.addEventListener/
+    );
+
+    if (!match) {
+      throw new Error("Official town list was not found.");
+    }
+
+    const regions = JSON.parse(match[1]);
+    const lookup = new Map();
+
+    regions.forEach(region => {
+      region.towns.forEach(town => {
+        const townName = String(town.key || "").trim();
+
+        if (!townName) return;
+
+        if (!lookup.has(townName)) lookup.set(townName, new Set());
+        lookup.get(townName).add(region.region_key);
+      });
+    });
+
+    townRegionLookup = lookup;
+  } catch (error) {
+    console.error("Unable to build town-region lookup:", error);
+  }
+}
+
+function resolveRegistrantRegion(registrant) {
+  const existingRegion = String(registrant.Region || "").trim();
+
+  if (existingRegion) return existingRegion;
+
+  const town = String(registrant.Location || "").trim();
+
+  if (REGION_REPAIR_OVERRIDES[town]) {
+    return REGION_REPAIR_OVERRIDES[town];
+  }
+
+  const possibleRegions = townRegionLookup.get(town);
+
+  if (possibleRegions?.size === 1) {
+    return Array.from(possibleRegions)[0];
+  }
+
+  return "Unknown region";
+}
+
+function getMissingRegionRepairs() {
+  return Object.entries(registrantsCache)
+    .map(([id, registrant]) => ({ id, registrant }))
+    .filter(item =>
+      item.registrant &&
+      typeof item.registrant === "object" &&
+      !String(item.registrant.Region || "").trim()
+    )
+    .map(item => ({
+      ...item,
+      inferredRegion: resolveRegistrantRegion(item.registrant)
+    }))
+    .filter(item => item.inferredRegion !== "Unknown region");
+}
+
+function updateRegionRepairButton() {
+  const button = document.getElementById("repairRegionsButton");
+  const repairs = getMissingRegionRepairs();
+
+  button.hidden = repairs.length === 0;
+  button.textContent = repairs.length
+    ? "Repair " + repairs.length + " missing regions"
+    : "All regions are assigned";
+}
+
+async function repairMissingRegions() {
+  const button = document.getElementById("repairRegionsButton");
+  const repairs = getMissingRegionRepairs();
+
+  if (!repairs.length) {
+    showToast("All known towns already have a region.", "success");
+    return;
+  }
+
+  const confirmed = window.confirm(
+    "Assign the known region to " + repairs.length +
+    " registrations that currently have no Region?"
+  );
+
+  if (!confirmed) return;
+
+  const updates = {};
+
+  repairs.forEach(item => {
+    updates[item.id] = {
+      ...item.registrant,
+      Region: item.inferredRegion
+    };
+  });
+
+  button.disabled = true;
+  button.textContent = "Repairing regions...";
+
+  try {
+    await adminRequest("/Persons.json", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(updates)
+    });
+
+    repairs.forEach(item => {
+      registrantsCache[item.id] = updates[item.id];
+    });
+
+    renderRegistrants();
+    renderTownStats();
+    renderRegionStats();
+    renderDuplicatePhones();
+    showToast(repairs.length + " registrations repaired successfully.", "success");
+  } catch (error) {
+    showToast("Unable to repair regions: " + error.message, "error");
+  } finally {
+    button.disabled = false;
+    updateRegionRepairButton();
+  }
 }
 
 function getFilteredRegionStatistics() {
@@ -752,6 +901,7 @@ function renderRegionStats() {
   });
 
   renderRegionStatsSummary(stats);
+  updateRegionRepairButton();
 }
 
 function renderRegionStatsSummary(stats) {
