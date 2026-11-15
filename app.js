@@ -109,6 +109,7 @@ window.MyBloodApp = (() => {
 
     return await request("/AllCalls.json", {
       method: "POST",
+      keepalive: true,
       headers: {
         "Content-Type": "application/json"
       },

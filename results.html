@@ -156,8 +156,8 @@
     <div id="loading" class="status">Loading donors... جاري تحميل المتبرعين</div>
     <div id="error" class="status" style="display:none;color:#8b0000"></div>
     <div class="global-cooldown-info">
-        Donors are displayed in a random order to distribute contact fairly.<br>
-        يتم عرض المتبرعين بترتيب عشوائي لتوزيع التواصل بشكل عادل.
+        After a confirmed call or WhatsApp contact, the donor is hidden from search results for 24 hours.<br>
+        بعد تأكيد الاتصال أو التواصل عبر واتساب، يتم إخفاء المتبرع من نتائج البحث لمدة 24 ساعة.
     </div>
     <div id="donorList"></div>
     <div id="resultsProgress" class="results-progress"></div>
@@ -200,6 +200,10 @@
         <strong>only when there is a real need for blood donation.</strong>
       </p>
 
+      <p class="contact-confirm-text">
+        When you continue, this donor will be hidden from all search results for 24 hours to avoid repeated contact.
+      </p>
+
       <div class="contact-confirm-ar" dir="rtl">
         <p>
           قام هذا الشخص بإضافة رقم هاتفه إلى مبادرة
@@ -211,6 +215,10 @@
           <strong>
             يرجى عدم التواصل معه إلا عند وجود حاجة فعلية للتبرع بالدم.
           </strong>
+        </p>
+
+        <p>
+          عند المتابعة، سيتم إخفاء هذا المتبرع من جميع نتائج البحث لمدة 24 ساعة لتجنب تكرار التواصل معه.
         </p>
       </div>
 
@@ -240,6 +248,7 @@
 
 <script>
 const DONORS_PER_PAGE = 50;
+const CONTACT_COOLDOWN_MS = 24 * 60 * 60 * 1000;
 
 const params = new URLSearchParams(window.location.search);
 const region = params.get("region") || "AlBekaa";
@@ -302,7 +311,10 @@ async function loadDonors() {
   }
 
   try {
-    const persons = await MyBloodApp.getPersons();
+    const [persons, allCalls] = await Promise.all([
+      MyBloodApp.getPersons(),
+      MyBloodApp.getAllCalls()
+    ]);
 
     if (loading) {
       loading.style.display = "none";
@@ -313,6 +325,8 @@ async function loadDonors() {
       return;
     }
 
+    const contactedPhones = getRecentlyContactedPhones(allCalls);
+
     donors = MyBloodApp.shuffle(
       Object.entries(persons)
         .map(([id, person]) => ({ id, ...person }))
@@ -320,7 +334,10 @@ async function loadDonors() {
           MyBloodApp.normalizeText(person.Location) ===
             MyBloodApp.normalizeText(town) &&
           MyBloodApp.normalizeText(person.BloodType) ===
-            MyBloodApp.normalizeText(blood)
+            MyBloodApp.normalizeText(blood) &&
+          !contactedPhones.has(
+            MyBloodApp.normalizeLebanonPhone(person.PhoneNumber)
+          )
         )
     );
 
@@ -363,6 +380,27 @@ async function loadDonors() {
       `;
     }
   }
+}
+
+function getRecentlyContactedPhones(allCalls) {
+  const contactedPhones = new Set();
+  const cutoffTime = Date.now() - CONTACT_COOLDOWN_MS;
+
+  Object.values(allCalls || {}).forEach(call => {
+    if (!call || !["call", "whatsapp"].includes(call.Channel)) {
+      return;
+    }
+
+    const contactTime = Date.parse(call.Date || "");
+
+    if (Number.isFinite(contactTime) && contactTime >= cutoffTime) {
+      contactedPhones.add(
+        MyBloodApp.normalizeLebanonPhone(call.To)
+      );
+    }
+  });
+
+  return contactedPhones;
 }
 
 function renderNextDonors() {
