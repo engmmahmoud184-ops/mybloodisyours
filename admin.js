@@ -124,10 +124,6 @@ function bindAdminEvents() {
     .addEventListener("input", resetAndRenderTownStats);
 
   document
-    .getElementById("townStatsRegionFilter")
-    .addEventListener("change", resetAndRenderTownStats);
-
-  document
     .getElementById("townStatsSort")
     .addEventListener("change", resetAndRenderTownStats);
 
@@ -299,7 +295,6 @@ async function loadRegistrants() {
     visibleRegistrantsCount = REGISTRANTS_PAGE_SIZE;
     visibleTownStatsCount = TOWN_STATS_PAGE_SIZE;
     visibleDuplicateGroupsCount = DUPLICATE_GROUPS_PAGE_SIZE;
-    populateTownStatsRegions();
     renderRegistrants();
     renderTownStats();
     renderDuplicatePhones();
@@ -503,7 +498,6 @@ async function mergeDuplicatePhoneGroup(group, button) {
     });
 
     renderRegistrants();
-    populateTownStatsRegions();
     renderTownStats();
     renderDuplicatePhones();
 
@@ -564,13 +558,11 @@ function getTownStatistics() {
     if (!registrant || typeof registrant !== "object") return;
 
     const town = String(registrant.Location || "Unknown town").trim() || "Unknown town";
-    const region = String(registrant.Region || "Unknown region").trim() || "Unknown region";
-    const key = region.toLowerCase() + "::" + town.toLowerCase();
+    const key = town.toLowerCase();
 
     if (!towns.has(key)) {
       towns.set(key, {
         town,
-        region,
         total: 0,
         bloodTypes: Object.fromEntries(BLOOD_TYPES.map(type => [type, 0]))
       });
@@ -591,15 +583,11 @@ function getTownStatistics() {
 
 function getFilteredTownStatistics() {
   const search = document.getElementById("townStatsSearch").value.trim().toLowerCase();
-  const region = document.getElementById("townStatsRegionFilter").value;
   const sort = document.getElementById("townStatsSort").value;
 
   return getTownStatistics()
     .filter(item => {
-      const matchesSearch = !search ||
-        (item.town + " " + item.region).toLowerCase().includes(search);
-      const matchesRegion = !region || item.region === region;
-      return matchesSearch && matchesRegion;
+      return !search || item.town.toLowerCase().includes(search);
     })
     .sort((first, second) => {
       if (sort === "town-asc") {
@@ -609,27 +597,6 @@ function getFilteredTownStatistics() {
       return second.total - first.total ||
         first.town.localeCompare(second.town, undefined, { sensitivity: "base" });
     });
-}
-
-function populateTownStatsRegions() {
-  const select = document.getElementById("townStatsRegionFilter");
-  const currentValue = select.value;
-  const regions = [...new Set(
-    Object.values(registrantsCache)
-      .filter(item => item && typeof item === "object")
-      .map(item => String(item.Region || "Unknown region").trim() || "Unknown region")
-  )].sort((first, second) => first.localeCompare(second));
-
-  select.innerHTML = '<option value="">All regions</option>';
-
-  regions.forEach(region => {
-    const option = document.createElement("option");
-    option.value = region;
-    option.textContent = region;
-    select.appendChild(option);
-  });
-
-  if (regions.includes(currentValue)) select.value = currentValue;
 }
 
 function renderTownStats() {
@@ -652,7 +619,6 @@ function renderTownStats() {
     row.innerHTML = `
       <td>${index + 1}</td>
       <td><strong>${escapeAdminHtml(item.town)}</strong></td>
-      <td>${escapeAdminHtml(item.region)}</td>
       <td><span class="admin-total-badge">${item.total}</span></td>
       ${BLOOD_TYPES.map(type => `<td>${item.bloodTypes[type]}</td>`).join("")}
     `;
@@ -669,12 +635,10 @@ function renderTownStats() {
 
 function renderTownStatsSummary(stats) {
   const peopleTotal = stats.reduce((sum, item) => sum + item.total, 0);
-  const regionsTotal = new Set(stats.map(item => item.region)).size;
   const topTown = [...stats].sort((a, b) => b.total - a.total)[0];
 
   document.getElementById("townStatsPeopleTotal").textContent = peopleTotal;
   document.getElementById("townStatsTownsTotal").textContent = stats.length;
-  document.getElementById("townStatsRegionsTotal").textContent = regionsTotal;
   document.getElementById("townStatsTopTown").textContent = topTown?.town || "—";
   document.getElementById("townStatsTopTownCount").textContent =
     (topTown?.total || 0) + " registered";

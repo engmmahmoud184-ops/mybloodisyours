@@ -303,6 +303,10 @@ textarea{
   margin:26px 0;
 }
 
+.admin-town-summary{
+  grid-template-columns:repeat(3,1fr);
+}
+
 .admin-summary-grid article{
   padding:20px;
   border:1px solid var(--admin-line);
@@ -821,9 +825,7 @@ body.admin-modal-open{
 }
 
 .admin-town-stats-table th:nth-child(2),
-.admin-town-stats-table th:nth-child(3),
-.admin-town-stats-table td:nth-child(2),
-.admin-town-stats-table td:nth-child(3){
+.admin-town-stats-table td:nth-child(2){
   text-align:left;
 }
 
