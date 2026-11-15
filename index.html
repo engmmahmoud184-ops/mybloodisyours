@@ -455,6 +455,37 @@
     </div>
   </section>
 
+  <section id="support-project" class="v6-project-support" aria-labelledby="supportProjectTitle">
+    <div class="v6-shell">
+      <div class="v6-project-support-card">
+        <div class="v6-project-support-copy">
+          <span class="v6-support-kicker">Support Our Mission · ساهم في استمرار رسالتنا</span>
+          <div class="v6-support-languages">
+            <div>
+              <h2 id="supportProjectTitle">Help Us Keep This Service Free</h2>
+              <p>My Blood Is Yours is a non-profit humanitarian initiative helping patients find volunteer blood donors quickly. Your optional support helps cover hosting, maintenance, development, and the continued expansion of this free service.</p>
+            </div>
+            <div dir="rtl" lang="ar">
+              <h2>ساعدنا في إبقاء هذه الخدمة مجانية</h2>
+              <p>مشروع دمي إلك مبادرة إنسانية غير ربحية تساعد المرضى في الوصول إلى متبرعي الدم بسرعة. مساهمتك الاختيارية تساعدنا في تغطية تكاليف التشغيل والصيانة والتطوير وتوسيع هذه الخدمة المجانية.</p>
+            </div>
+          </div>
+          <small>Contributions support the operation and development of the project. · تُستخدم المساهمات لدعم تشغيل المشروع وتطويره.</small>
+        </div>
+
+        <div class="v6-whish-card">
+          <div class="v6-whish-logo" aria-hidden="true">W</div>
+          <span>Support via Whish Money</span>
+          <small>الدعم عبر Whish Money</small>
+          <strong id="whishNumber">70 530 939</strong>
+          <button id="copyWhishButton" class="v6-copy-whish" type="button" onclick="copyWhishNumber()">Copy number | نسخ الرقم</button>
+          <a class="v6-whatsapp-support" href="https://wa.me/96170530939?text=Hello%2C%20I%20would%20like%20to%20support%20My%20Blood%20Is%20Yours." target="_blank" rel="noopener noreferrer">Contact via WhatsApp | تواصل عبر واتساب</a>
+          <p id="whishCopyStatus" class="v6-copy-status" role="status" aria-live="polite"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </main>
 
 <footer class="v6-footer">
@@ -514,6 +545,38 @@ function toggleV6Menu(button) {
   const nav = document.getElementById("v6NavLinks");
   const isOpen = nav.classList.toggle("is-open");
   button.setAttribute("aria-expanded", String(isOpen));
+}
+
+async function copyWhishNumber() {
+  const number = "70530939";
+  const button = document.getElementById("copyWhishButton");
+  const status = document.getElementById("whishCopyStatus");
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(number);
+    } else {
+      const input = document.createElement("textarea");
+      input.value = number;
+      input.setAttribute("readonly", "");
+      input.style.position = "fixed";
+      input.style.opacity = "0";
+      document.body.appendChild(input);
+      input.select();
+      document.execCommand("copy");
+      input.remove();
+    }
+
+    button.textContent = "Copied | تم النسخ";
+    status.textContent = "Whish Money: 70 530 939";
+  } catch (error) {
+    status.textContent = "Please copy: 70 530 939 | يرجى نسخ الرقم";
+  }
+
+  window.setTimeout(() => {
+    button.textContent = "Copy number | نسخ الرقم";
+    status.textContent = "";
+  }, 3500);
 }
 
 async function loadHomepageStats() {
