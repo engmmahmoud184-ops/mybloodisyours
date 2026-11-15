@@ -398,29 +398,60 @@ async function mergeDuplicatePhoneGroup(group, button) {
   if (!confirmed) return;
 
   const mergedRecord = buildMergedRegistrant(group.records);
-  const updates = { [keeper.id]: mergedRecord };
-
-  duplicates.forEach(record => {
-    updates[record.id] = null;
-  });
 
   button.disabled = true;
   button.textContent = "Merging...";
 
   try {
-    await MyBloodApp.request("/Persons.json", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(updates)
-    });
+    // Firebase rules allow writes on individual Person records but reject
+    // a multi-record PATCH on /Persons. Save the keeper first so donor data
+    // is never lost if deleting one of the duplicate records later fails.
+    await MyBloodApp.request(
+      "/Persons/" + encodeURIComponent(keeper.id) + ".json",
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(mergedRecord)
+      }
+    );
 
     registrantsCache[keeper.id] = mergedRecord;
-    duplicates.forEach(record => delete registrantsCache[record.id]);
+
+    const deleteResults = await Promise.allSettled(
+      duplicates.map(record =>
+        MyBloodApp.request(
+          "/Persons/" + encodeURIComponent(record.id) + ".json",
+          { method: "DELETE" }
+        )
+      )
+    );
+
+    const failedDeletes = [];
+
+    deleteResults.forEach((result, index) => {
+      const record = duplicates[index];
+
+      if (result.status === "fulfilled") {
+        delete registrantsCache[record.id];
+      } else {
+        failedDeletes.push(record);
+      }
+    });
 
     renderRegistrants();
     populateTownStatsRegions();
     renderTownStats();
     renderDuplicatePhones();
+
+    if (failedDeletes.length) {
+      showToast(
+        "The main record was saved, but " + failedDeletes.length +
+        " duplicate record(s) could not be deleted. Please try again.",
+        "error"
+      );
+      return;
+    }
+
     showToast("Duplicate registrations merged successfully.", "success");
   } catch (error) {
     button.disabled = false;
@@ -454,9 +485,6 @@ function buildMergedRegistrant(records) {
     if (fallback) keeper[field] = fallback[field];
   });
 
-  keeper.MergedAt = new Date().toISOString();
-  keeper.MergedBy = ADMIN_CONFIG.username;
-  keeper.MergedRecordCount = records.length;
   return keeper;
 }
 
