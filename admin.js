@@ -461,6 +461,7 @@ function getFilteredCalls() {
       call.From,
       call.Channel,
       call.donor?.FullName,
+      call.donor?.BloodType,
       call.donor?.Location
     ]
       .join(" ").toLowerCase().includes(search);
@@ -529,6 +530,7 @@ function renderCalls() {
       : "Date unavailable";
     const phone = String(call.To || "");
     const donorName = call.donor?.FullName || "Unknown | غير معروف";
+    const donorBloodType = call.donor?.BloodType || "—";
     const donorTown = call.donor?.Location || "Unknown | غير معروف";
 
     return `
@@ -537,6 +539,7 @@ function renderCalls() {
         <td>${escapeAdminHtml(dateLabel)}</td>
         <td><span class="admin-channel-badge ${channelClass}">${channelLabel}</span></td>
         <td><strong>${escapeAdminHtml(donorName)}</strong></td>
+        <td><span class="admin-blood-badge">${escapeAdminHtml(donorBloodType)}</span></td>
         <td><a href="tel:${escapeAdminHtml(phone)}">${escapeAdminHtml(phone || "—")}</a></td>
         <td>${escapeAdminHtml(donorTown)}</td>
         <td>
