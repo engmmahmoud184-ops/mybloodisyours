@@ -215,6 +215,42 @@ window.MyBloodApp = (() => {
     element.textContent = text;
   }
 
+  async function copyWhishNumber() {
+    const number = "70530939";
+    const button = document.getElementById("copyWhishButton");
+    const status = document.getElementById("whishCopyStatus");
+
+    if (!button || !status) {
+      return;
+    }
+
+    try {
+      if (navigator.clipboard && window.isSecureContext) {
+        await navigator.clipboard.writeText(number);
+      } else {
+        const input = document.createElement("textarea");
+        input.value = number;
+        input.setAttribute("readonly", "");
+        input.style.position = "fixed";
+        input.style.opacity = "0";
+        document.body.appendChild(input);
+        input.select();
+        document.execCommand("copy");
+        input.remove();
+      }
+
+      button.textContent = "Copied | تم النسخ";
+      status.textContent = "Whish Money: 70 530 939";
+    } catch (error) {
+      status.textContent = "Please copy: 70 530 939 | يرجى نسخ الرقم";
+    }
+
+    window.setTimeout(() => {
+      button.textContent = "Copy number | نسخ الرقم";
+      status.textContent = "";
+    }, 3500);
+  }
+
   return {
     FIREBASE_URL,
     request,
@@ -231,6 +267,7 @@ window.MyBloodApp = (() => {
     shuffle,
     escapeHtml,
     setButtonLoading,
-    showMessage
+    showMessage,
+    copyWhishNumber
   };
 })();
