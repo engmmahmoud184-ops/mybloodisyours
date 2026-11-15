@@ -10,6 +10,8 @@
   <link rel="icon" href="assets/logo-32.png">
   <link rel="stylesheet" href="admin.css">
 
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" defer></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" defer></script>
   <script src="app.js" defer></script>
   <script src="admin.js" defer></script>
 </head>
@@ -31,11 +33,11 @@
 
       <form id="loginForm" class="admin-form">
         <label>
-          Username
+          Admin Email
           <input
             id="loginUsername"
-            type="text"
-            autocomplete="username"
+            type="email"
+            autocomplete="email"
             required>
         </label>
 
@@ -56,7 +58,7 @@
       </form>
 
       <small class="admin-security-note">
-        This is a temporary static login. System Authentication is recommended before public production use.
+        Secure administrator access protected by Firebase Authentication.
       </small>
     </div>
   </section>

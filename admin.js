@@ -1,9 +1,16 @@
 "use strict";
 
 const ADMIN_CONFIG = {
-  username: "onsheinTech",
-passwordHash: "a7efe53e14ccd3d691cbbb258b6898174c53e206f8c5808be3f1b41377a8ef11",
-  sessionKey: "myblood_admin_session_v1"
+  uid: "QgfCoMSZDzWPTh8TLZl67oaDBR43",
+  firebase: {
+    apiKey: "AIzaSyBSWUCVPxD2Ctu1fXKxPcsN19sNRQI2ppU",
+    authDomain: "lebanonbloodcategoryproject.firebaseapp.com",
+    databaseURL: "https://lebanonbloodcategoryproject.firebaseio.com",
+    projectId: "lebanonbloodcategoryproject",
+    storageBucket: "lebanonbloodcategoryproject.appspot.com",
+    messagingSenderId: "423009916760",
+    appId: "1:423009916760:web:df126d232adc12da19372d"
+  }
 };
 
 let contributorsCache = {};
@@ -24,13 +31,42 @@ const registrantDateFormatter = new Intl.DateTimeFormat("en-LB", {
 
 document.addEventListener("DOMContentLoaded", () => {
   bindAdminEvents();
-
-  if (isAdminSessionActive()) {
-    showDashboard();
-  } else {
-    showLogin();
-  }
+  initializeAdminAuthentication();
 });
+
+function initializeAdminAuthentication() {
+  if (typeof firebase === "undefined") {
+    showLogin();
+    setAdminMessage(
+      "loginMessage",
+      "error",
+      "Unable to load Firebase Authentication. Check your internet connection."
+    );
+    return;
+  }
+
+  if (!firebase.apps.length) {
+    firebase.initializeApp(ADMIN_CONFIG.firebase);
+  }
+
+  firebase.auth().onAuthStateChanged(async user => {
+    if (user && user.uid === ADMIN_CONFIG.uid) {
+      showDashboard();
+      return;
+    }
+
+    if (user) {
+      await firebase.auth().signOut();
+      setAdminMessage(
+        "loginMessage",
+        "error",
+        "This Firebase account is not authorized for administration."
+      );
+    }
+
+    showLogin();
+  });
+}
 
 function bindAdminEvents() {
   document
@@ -125,62 +161,90 @@ function bindAdminEvents() {
     });
 }
 
-async function sha256(value) {
-  const data = new TextEncoder().encode(value);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-
-  return Array.from(new Uint8Array(hashBuffer))
-    .map(byte => byte.toString(16).padStart(2, "0"))
-    .join("");
-}
-
 async function handleAdminLogin(event) {
   event.preventDefault();
 
-  const username =
+  const email =
     document.getElementById("loginUsername").value.trim();
 
   const password =
     document.getElementById("loginPassword").value;
 
-  const passwordHash = await sha256(password);
+  const button = event.submitter;
 
-  if (
-    username === ADMIN_CONFIG.username &&
-    passwordHash === ADMIN_CONFIG.passwordHash
-  ) {
-    sessionStorage.setItem(
-      ADMIN_CONFIG.sessionKey,
-      JSON.stringify({
-        username,
-        loggedInAt: new Date().toISOString()
-      })
+  button.disabled = true;
+  button.textContent = "Signing in...";
+  setAdminMessage("loginMessage", "", "");
+
+  try {
+    await firebase.auth().setPersistence(
+      firebase.auth.Auth.Persistence.SESSION
     );
 
+    const credential = await firebase
+      .auth()
+      .signInWithEmailAndPassword(email, password);
+
+    if (credential.user.uid !== ADMIN_CONFIG.uid) {
+      await firebase.auth().signOut();
+      throw new Error("This account is not authorized for administration.");
+    }
+
     document.getElementById("loginForm").reset();
-    showDashboard();
-    return;
+  } catch (error) {
+    setAdminMessage(
+      "loginMessage",
+      "error",
+      getAdminLoginErrorMessage(error)
+    );
+  } finally {
+    button.disabled = false;
+    button.textContent = "Login | تسجيل الدخول";
+  }
+}
+
+function getAdminLoginErrorMessage(error) {
+  const errorCode = String(error?.code || "");
+
+  if (
+    errorCode === "auth/invalid-credential" ||
+    errorCode === "auth/wrong-password" ||
+    errorCode === "auth/user-not-found"
+  ) {
+    return "Invalid email or password.";
   }
 
-  setAdminMessage(
-    "loginMessage",
-    "error",
-    "Invalid username or password."
-  );
+  if (errorCode === "auth/too-many-requests") {
+    return "Too many login attempts. Please wait and try again.";
+  }
+
+  if (errorCode === "auth/unauthorized-domain") {
+    return "This website domain is not authorized in Firebase Authentication.";
+  }
+
+  return error?.message || "Unable to sign in.";
 }
 
-function isAdminSessionActive() {
-  return Boolean(
-    sessionStorage.getItem(ADMIN_CONFIG.sessionKey)
-  );
-}
-
-function adminLogout() {
-  sessionStorage.removeItem(ADMIN_CONFIG.sessionKey);
+async function adminLogout() {
   contributorsCache = {};
   registrantsCache = {};
   registrantsLoaded = false;
-  showLogin();
+  await firebase.auth().signOut();
+}
+
+async function adminRequest(path, options = {}) {
+  const user = firebase.auth().currentUser;
+
+  if (!user || user.uid !== ADMIN_CONFIG.uid) {
+    throw new Error("Administrator authentication is required.");
+  }
+
+  const authToken = await user.getIdToken();
+  return MyBloodApp.request(path, { ...options, authToken });
+}
+
+function getAdminIdentity() {
+  return firebase.auth().currentUser?.email || ADMIN_CONFIG.uid;
 }
 
 function showLogin() {
@@ -230,7 +294,7 @@ async function loadRegistrants() {
   duplicatesLoading.hidden = false;
 
   try {
-    registrantsCache = await MyBloodApp.request("/Persons.json") || {};
+    registrantsCache = await adminRequest("/Persons.json") || {};
     registrantsLoaded = true;
     visibleRegistrantsCount = REGISTRANTS_PAGE_SIZE;
     visibleTownStatsCount = TOWN_STATS_PAGE_SIZE;
@@ -406,7 +470,7 @@ async function mergeDuplicatePhoneGroup(group, button) {
     // Firebase rules allow writes on individual Person records but reject
     // a multi-record PATCH on /Persons. Save the keeper first so donor data
     // is never lost if deleting one of the duplicate records later fails.
-    await MyBloodApp.request(
+    await adminRequest(
       "/Persons/" + encodeURIComponent(keeper.id) + ".json",
       {
         method: "PUT",
@@ -419,7 +483,7 @@ async function mergeDuplicatePhoneGroup(group, button) {
 
     const deleteResults = await Promise.allSettled(
       duplicates.map(record =>
-        MyBloodApp.request(
+        adminRequest(
           "/Persons/" + encodeURIComponent(record.id) + ".json",
           { method: "DELETE" }
         )
@@ -720,7 +784,7 @@ async function loadContributors() {
 
   try {
     contributorsCache =
-      await MyBloodApp.request("/Contributors.json") || {};
+      await adminRequest("/Contributors.json") || {};
 
     renderContributors();
     updateSummary();
@@ -1146,7 +1210,7 @@ async function saveContributor(event) {
       document.getElementById("notes").value.trim(),
 
     UpdatedAt: now,
-    UpdatedBy: ADMIN_CONFIG.username
+    UpdatedBy: getAdminIdentity()
   };
 
   button.disabled = true;
@@ -1159,9 +1223,9 @@ async function saveContributor(event) {
 
       payload.CreatedBy =
         contributorsCache[contributorId]?.CreatedBy ||
-        ADMIN_CONFIG.username;
+        getAdminIdentity();
 
-      await MyBloodApp.request(
+      await adminRequest(
         "/Contributors/" + contributorId + ".json",
         {
           method: "PUT",
@@ -1175,9 +1239,9 @@ async function saveContributor(event) {
       showToast("Contributor updated successfully.", "success");
     } else {
       payload.CreatedAt = now;
-      payload.CreatedBy = ADMIN_CONFIG.username;
+      payload.CreatedBy = getAdminIdentity();
 
-      await MyBloodApp.request(
+      await adminRequest(
         "/Contributors.json",
         {
           method: "POST",
@@ -1224,7 +1288,7 @@ async function deleteContributor(id) {
   }
 
   try {
-    await MyBloodApp.request(
+    await adminRequest(
       "/Contributors/" + id + ".json",
       {
         method: "DELETE"

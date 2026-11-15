@@ -21,13 +21,18 @@ window.MyBloodApp = (() => {
 
   async function request(path, options = {}) {
     const timeout = createTimeoutController();
+    const { authToken = "", ...fetchOptions } = options;
+    const separator = path.includes("?") ? "&" : "?";
+    const requestUrl = authToken
+      ? FIREBASE_URL + path + separator + "auth=" + encodeURIComponent(authToken)
+      : FIREBASE_URL + path;
 
     try {
       const response = await fetch(
-        FIREBASE_URL + path,
+        requestUrl,
         {
           cache: "no-store",
-          ...options,
+          ...fetchOptions,
           signal: timeout.controller.signal
         }
       );
