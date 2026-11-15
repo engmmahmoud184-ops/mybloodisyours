@@ -764,6 +764,21 @@ body.admin-modal-open{
   font-weight:950;
 }
 
+.admin-pagination{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding:18px 15px 2px;
+  color:var(--admin-muted);
+  font-size:13px;
+  font-weight:800;
+}
+
+.admin-pagination .admin-secondary-button{
+  min-height:40px;
+}
+
 @media(max-width:1050px){
   .admin-summary-grid{
     grid-template-columns:repeat(2,1fr);
@@ -826,6 +841,12 @@ body.admin-modal-open{
 
   .admin-registrants-total{
     width:100%;
+  }
+
+  .admin-pagination{
+    align-items:stretch;
+    flex-direction:column;
+    text-align:center;
   }
 
   .admin-topbar .admin-primary-button{

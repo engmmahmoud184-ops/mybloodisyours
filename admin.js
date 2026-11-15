@@ -9,6 +9,13 @@ passwordHash: "a7efe53e14ccd3d691cbbb258b6898174c53e206f8c5808be3f1b41377a8ef11"
 let contributorsCache = {};
 let registrantsCache = {};
 let registrantsLoaded = false;
+let visibleRegistrantsCount = 50;
+
+const REGISTRANTS_PAGE_SIZE = 50;
+const registrantDateFormatter = new Intl.DateTimeFormat("en-LB", {
+  dateStyle: "medium",
+  timeStyle: "short"
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   bindAdminEvents();
@@ -59,7 +66,17 @@ function bindAdminEvents() {
 
   document
     .getElementById("registrantsSearch")
-    .addEventListener("input", renderRegistrants);
+    .addEventListener("input", () => {
+      visibleRegistrantsCount = REGISTRANTS_PAGE_SIZE;
+      renderRegistrants();
+    });
+
+  document
+    .getElementById("loadMoreRegistrantsButton")
+    .addEventListener("click", () => {
+      visibleRegistrantsCount += REGISTRANTS_PAGE_SIZE;
+      renderRegistrants();
+    });
 
   document
     .getElementById("contributorModal")
@@ -162,6 +179,7 @@ async function loadRegistrants() {
   try {
     registrantsCache = await MyBloodApp.request("/Persons.json") || {};
     registrantsLoaded = true;
+    visibleRegistrantsCount = REGISTRANTS_PAGE_SIZE;
     renderRegistrants();
   } catch (error) {
     registrantsCache = {};
@@ -209,9 +227,13 @@ function getSortedRegistrants() {
 
 function renderRegistrants() {
   const registrants = getSortedRegistrants();
+  const visibleRegistrants = registrants.slice(0, visibleRegistrantsCount);
   const body = document.getElementById("registrantsTableBody");
   const empty = document.getElementById("registrantsEmpty");
   const tableWrap = document.getElementById("registrantsTableWrap");
+  const pagination = document.getElementById("registrantsPagination");
+  const progress = document.getElementById("registrantsProgress");
+  const loadMoreButton = document.getElementById("loadMoreRegistrantsButton");
 
   document.getElementById("registrantsTotal").textContent =
     Object.keys(registrantsCache).length;
@@ -219,8 +241,9 @@ function renderRegistrants() {
   body.innerHTML = "";
   empty.hidden = registrants.length > 0;
   tableWrap.hidden = registrants.length === 0;
+  pagination.hidden = registrants.length === 0;
 
-  registrants.forEach((registrant, index) => {
+  visibleRegistrants.forEach((registrant, index) => {
     const row = document.createElement("tr");
     const phone = String(registrant.PhoneNumber || "");
     const callablePhone = phone.replace(/[^\d+]/g, "");
@@ -237,6 +260,11 @@ function renderRegistrants() {
 
     body.appendChild(row);
   });
+
+  progress.textContent =
+    "Showing " + visibleRegistrants.length + " of " + registrants.length;
+
+  loadMoreButton.hidden = visibleRegistrants.length >= registrants.length;
 }
 
 function formatRegistrantDate(value) {
@@ -246,10 +274,7 @@ function formatRegistrantDate(value) {
     return "Date unavailable";
   }
 
-  return new Intl.DateTimeFormat("en-LB", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  }).format(date);
+  return registrantDateFormatter.format(date);
 }
 
 async function loadContributors() {
