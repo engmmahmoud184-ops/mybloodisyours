@@ -72,9 +72,14 @@
       </a>
 
       <nav>
-        <button class="is-active" type="button">
+        <button id="contributorsNavButton" class="is-active" type="button" onclick="showAdminSection('contributors')">
           <span>🤝</span>
           Contributors
+        </button>
+
+        <button id="registrantsNavButton" type="button" onclick="showAdminSection('registrants')">
+          <span>🩸</span>
+          Registered Donors
         </button>
       </nav>
 
@@ -84,7 +89,7 @@
       </div>
     </aside>
 
-    <main class="admin-main">
+    <main id="contributorsView" class="admin-main">
       <header class="admin-topbar">
         <div>
           <span>My Blood Is Yours</span>
@@ -165,6 +170,63 @@
         </div>
 
         <div id="contributorsGrid" class="admin-contributors-grid"></div>
+      </section>
+    </main>
+
+    <main id="registrantsView" class="admin-main" hidden>
+      <header class="admin-topbar">
+        <div>
+          <span>My Blood Is Yours</span>
+          <h1>Registered Donors</h1>
+          <p>All program registrations, ordered from newest to oldest.</p>
+        </div>
+
+        <div class="admin-registrants-total">
+          <span>Total registered</span>
+          <strong id="registrantsTotal">0</strong>
+        </div>
+      </header>
+
+      <section class="admin-content-card">
+        <div class="admin-content-header">
+          <div>
+            <h2>All Registrants</h2>
+            <p>الأحدث تسجيلاً يظهر أولاً</p>
+          </div>
+
+          <div class="admin-filter-row">
+            <input
+              id="registrantsSearch"
+              type="search"
+              placeholder="Search name, phone, blood type, or location">
+          </div>
+        </div>
+
+        <div id="registrantsLoading" class="admin-loading" hidden>
+          Loading registered donors...
+        </div>
+
+        <div id="registrantsEmpty" class="admin-empty" hidden>
+          <strong>No registered donors found.</strong>
+          <span>New registrations will appear here.</span>
+        </div>
+
+        <div id="registrantsTableWrap" class="admin-table-wrap" hidden>
+          <table class="admin-registrants-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Blood Type</th>
+                <th>Region</th>
+                <th>Town</th>
+                <th>Registered At</th>
+              </tr>
+            </thead>
+            <tbody id="registrantsTableBody"></tbody>
+          </table>
+        </div>
       </section>
     </main>
   </div>

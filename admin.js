@@ -7,6 +7,8 @@ passwordHash: "a7efe53e14ccd3d691cbbb258b6898174c53e206f8c5808be3f1b41377a8ef11"
 };
 
 let contributorsCache = {};
+let registrantsCache = {};
+let registrantsLoaded = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   bindAdminEvents();
@@ -54,6 +56,10 @@ function bindAdminEvents() {
   document
     .getElementById("scopeFilter")
     .addEventListener("change", renderContributors);
+
+  document
+    .getElementById("registrantsSearch")
+    .addEventListener("input", renderRegistrants);
 
   document
     .getElementById("contributorModal")
@@ -117,6 +123,8 @@ function isAdminSessionActive() {
 function adminLogout() {
   sessionStorage.removeItem(ADMIN_CONFIG.sessionKey);
   contributorsCache = {};
+  registrantsCache = {};
+  registrantsLoaded = false;
   showLogin();
 }
 
@@ -129,7 +137,119 @@ function showLogin() {
 function showDashboard() {
   document.getElementById("loginView").hidden = true;
   document.getElementById("dashboardView").hidden = false;
+  showAdminSection("contributors");
   loadContributors();
+}
+
+function showAdminSection(section) {
+  const showRegistrants = section === "registrants";
+
+  document.getElementById("contributorsView").hidden = showRegistrants;
+  document.getElementById("registrantsView").hidden = !showRegistrants;
+  document.getElementById("contributorsNavButton").classList.toggle("is-active", !showRegistrants);
+  document.getElementById("registrantsNavButton").classList.toggle("is-active", showRegistrants);
+
+  if (showRegistrants && !registrantsLoaded) {
+    loadRegistrants();
+  }
+}
+
+async function loadRegistrants() {
+  const loading = document.getElementById("registrantsLoading");
+
+  loading.hidden = false;
+
+  try {
+    registrantsCache = await MyBloodApp.request("/Persons.json") || {};
+    registrantsLoaded = true;
+    renderRegistrants();
+  } catch (error) {
+    registrantsCache = {};
+    renderRegistrants();
+    showToast("Unable to load registered donors: " + error.message, "error");
+  } finally {
+    loading.hidden = true;
+  }
+}
+
+function getSortedRegistrants() {
+  const search = document
+    .getElementById("registrantsSearch")
+    .value.trim().toLowerCase();
+
+  return Object.entries(registrantsCache)
+    .map(([id, registrant]) => ({ id, ...registrant }))
+    .filter(registrant => {
+      const searchableText = [
+        registrant.FullName,
+        registrant.PhoneNumber,
+        registrant.BloodType,
+        registrant.Region,
+        registrant.Location
+      ].join(" ").toLowerCase();
+
+      return !search || searchableText.includes(search);
+    })
+    .sort((first, second) => {
+      const firstTime = Date.parse(first.CreatedAt || "");
+      const secondTime = Date.parse(second.CreatedAt || "");
+
+      if (Number.isFinite(firstTime) && Number.isFinite(secondTime)) {
+        return secondTime - firstTime;
+      }
+
+      if (Number.isFinite(firstTime)) return -1;
+      if (Number.isFinite(secondTime)) return 1;
+
+      // Firebase push IDs are chronologically sortable, so this also
+      // orders legacy records that were saved without CreatedAt.
+      return String(second.id).localeCompare(String(first.id));
+    });
+}
+
+function renderRegistrants() {
+  const registrants = getSortedRegistrants();
+  const body = document.getElementById("registrantsTableBody");
+  const empty = document.getElementById("registrantsEmpty");
+  const tableWrap = document.getElementById("registrantsTableWrap");
+
+  document.getElementById("registrantsTotal").textContent =
+    Object.keys(registrantsCache).length;
+
+  body.innerHTML = "";
+  empty.hidden = registrants.length > 0;
+  tableWrap.hidden = registrants.length === 0;
+
+  registrants.forEach((registrant, index) => {
+    const row = document.createElement("tr");
+    const phone = String(registrant.PhoneNumber || "");
+    const callablePhone = phone.replace(/[^\d+]/g, "");
+
+    row.innerHTML = `
+      <td data-label="#">${index + 1}</td>
+      <td data-label="Name"><strong>${escapeAdminHtml(registrant.FullName || "—")}</strong></td>
+      <td data-label="Phone"><a href="tel:${escapeAdminHtml(callablePhone)}">${escapeAdminHtml(phone || "—")}</a></td>
+      <td data-label="Blood Type"><span class="admin-blood-badge">${escapeAdminHtml(registrant.BloodType || "—")}</span></td>
+      <td data-label="Region">${escapeAdminHtml(registrant.Region || "—")}</td>
+      <td data-label="Town">${escapeAdminHtml(registrant.Location || "—")}</td>
+      <td data-label="Registered At">${escapeAdminHtml(formatRegistrantDate(registrant.CreatedAt))}</td>
+    `;
+
+    body.appendChild(row);
+  });
+}
+
+function formatRegistrantDate(value) {
+  const date = new Date(value || "");
+
+  if (Number.isNaN(date.getTime())) {
+    return "Date unavailable";
+  }
+
+  return new Intl.DateTimeFormat("en-LB", {
+    dateStyle: "medium",
+    timeStyle: "short"
+  }).format(date);
 }
 
 async function loadContributors() {

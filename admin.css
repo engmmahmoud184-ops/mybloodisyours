@@ -689,6 +689,81 @@ body.admin-modal-open{
   overflow:hidden;
 }
 
+.admin-registrants-total{
+  min-width:170px;
+  padding:16px 20px;
+  border:1px solid var(--admin-line);
+  border-radius:16px;
+  background:#fff;
+  box-shadow:0 8px 24px rgba(16,45,82,.07);
+}
+
+.admin-registrants-total span{
+  display:block;
+  color:var(--admin-muted);
+  font-size:12px;
+  font-weight:800;
+}
+
+.admin-registrants-total strong{
+  display:block;
+  margin-top:5px;
+  color:var(--admin-red);
+  font-size:30px;
+}
+
+.admin-table-wrap{
+  overflow-x:auto;
+}
+
+.admin-registrants-table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:860px;
+}
+
+.admin-registrants-table th,
+.admin-registrants-table td{
+  padding:14px 15px;
+  border-bottom:1px solid var(--admin-line);
+  text-align:left;
+  vertical-align:middle;
+}
+
+.admin-registrants-table th{
+  background:#f7f9fc;
+  color:var(--admin-muted);
+  font-size:12px;
+  text-transform:uppercase;
+  letter-spacing:.03em;
+}
+
+.admin-registrants-table td{
+  color:#35445b;
+  font-size:13px;
+}
+
+.admin-registrants-table tbody tr:hover{
+  background:#fbfcfe;
+}
+
+.admin-registrants-table a{
+  color:var(--admin-navy-2);
+  font-weight:800;
+  text-decoration:none;
+}
+
+.admin-blood-badge{
+  display:inline-flex;
+  min-width:40px;
+  justify-content:center;
+  padding:6px 9px;
+  border-radius:9px;
+  background:rgba(215,25,50,.1);
+  color:var(--admin-red-dark);
+  font-weight:950;
+}
+
 @media(max-width:1050px){
   .admin-summary-grid{
     grid-template-columns:repeat(2,1fr);
@@ -725,7 +800,14 @@ body.admin-modal-open{
   }
 
   .admin-sidebar nav{
-    display:none;
+    grid-template-columns:1fr 1fr;
+    margin-top:4px;
+  }
+
+  .admin-sidebar nav button{
+    justify-content:center;
+    padding:11px 8px;
+    font-size:12px;
   }
 
   .admin-sidebar-footer{
@@ -740,6 +822,10 @@ body.admin-modal-open{
   .admin-topbar{
     align-items:stretch;
     flex-direction:column;
+  }
+
+  .admin-registrants-total{
+    width:100%;
   }
 
   .admin-topbar .admin-primary-button{
