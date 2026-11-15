@@ -354,7 +354,14 @@ async function loadCalls() {
   loading.hidden = false;
 
   try {
-    callsCache = await adminRequest("/AllCalls.json") || {};
+    const [calls, persons] = await Promise.all([
+      adminRequest("/AllCalls.json"),
+      registrantsLoaded
+        ? Promise.resolve(registrantsCache)
+        : adminRequest("/Persons.json")
+    ]);
+    callsCache = calls || {};
+    registrantsCache = persons || {};
     callsLoaded = true;
     visibleCallsCount = CALLS_PAGE_SIZE;
     renderCalls();
@@ -397,8 +404,30 @@ function getCallTimestamp(call) {
 }
 
 function getAllCallRecords() {
+  const donorsByPhone = new Map();
+
+  Object.entries(registrantsCache)
+    .map(([id, registrant]) => ({ id, ...registrant }))
+    .sort(compareRegistrantsNewestFirst)
+    .forEach(registrant => {
+      if (!MyBloodApp.isValidLebanonPhone(registrant.PhoneNumber)) {
+        return;
+      }
+      const phone = MyBloodApp.normalizeLebanonPhone(registrant.PhoneNumber);
+      if (phone && !donorsByPhone.has(phone)) {
+        donorsByPhone.set(phone, registrant);
+      }
+    });
+
   return Object.entries(callsCache)
-    .map(([id, call]) => ({ id, ...call, timestamp: getCallTimestamp(call) }))
+    .map(([id, call]) => ({
+      id,
+      ...call,
+      timestamp: getCallTimestamp(call),
+      donor: MyBloodApp.isValidLebanonPhone(call?.To)
+        ? donorsByPhone.get(MyBloodApp.normalizeLebanonPhone(call.To)) || null
+        : null
+    }))
     .sort((first, second) => {
       if (Number.isFinite(first.timestamp) && Number.isFinite(second.timestamp)) {
         return second.timestamp - first.timestamp;
@@ -427,7 +456,13 @@ function getFilteredCalls() {
   const periodStart = periodStarts[period];
 
   return getAllCallRecords().filter(call => {
-    const matchesSearch = !search || [call.To, call.From, call.Channel]
+    const matchesSearch = !search || [
+      call.To,
+      call.From,
+      call.Channel,
+      call.donor?.FullName,
+      call.donor?.Location
+    ]
       .join(" ").toLowerCase().includes(search);
     const matchesChannel = !channel ||
       call.Channel === channel ||
@@ -493,13 +528,17 @@ function renderCalls() {
       ? registrantDateFormatter.format(new Date(call.timestamp))
       : "Date unavailable";
     const phone = String(call.To || "");
+    const donorName = call.donor?.FullName || "Unknown | غير معروف";
+    const donorTown = call.donor?.Location || "Unknown | غير معروف";
 
     return `
       <tr>
         <td>${index + 1}</td>
         <td>${escapeAdminHtml(dateLabel)}</td>
         <td><span class="admin-channel-badge ${channelClass}">${channelLabel}</span></td>
+        <td><strong>${escapeAdminHtml(donorName)}</strong></td>
         <td><a href="tel:${escapeAdminHtml(phone)}">${escapeAdminHtml(phone || "—")}</a></td>
+        <td>${escapeAdminHtml(donorTown)}</td>
         <td>
           <span class="admin-cooldown-badge ${isActive ? "active" : "expired"}">
             ${isActive ? remainingHours + "h remaining" : "Expired"}
