@@ -128,6 +128,14 @@ function bindAdminEvents() {
     .addEventListener("change", resetAndRenderTownStats);
 
   document
+    .getElementById("regionStatsSearch")
+    .addEventListener("input", renderRegionStats);
+
+  document
+    .getElementById("regionStatsSort")
+    .addEventListener("change", renderRegionStats);
+
+  document
     .getElementById("loadMoreTownStatsButton")
     .addEventListener("click", () => {
       visibleTownStatsCount += TOWN_STATS_PAGE_SIZE;
@@ -259,22 +267,31 @@ function showDashboard() {
 function showAdminSection(section) {
   const showRegistrants = section === "registrants";
   const showTownStats = section === "townStats";
+  const showRegionStats = section === "regionStats";
   const showDuplicatePhones = section === "duplicatePhones";
-  const showContributors = !showRegistrants && !showTownStats && !showDuplicatePhones;
+  const showContributors =
+    !showRegistrants && !showTownStats && !showRegionStats && !showDuplicatePhones;
 
   document.getElementById("contributorsView").hidden = !showContributors;
   document.getElementById("registrantsView").hidden = !showRegistrants;
   document.getElementById("townStatsView").hidden = !showTownStats;
+  document.getElementById("regionStatsView").hidden = !showRegionStats;
   document.getElementById("duplicatePhonesView").hidden = !showDuplicatePhones;
   document.getElementById("contributorsNavButton").classList.toggle("is-active", showContributors);
   document.getElementById("registrantsNavButton").classList.toggle("is-active", showRegistrants);
   document.getElementById("townStatsNavButton").classList.toggle("is-active", showTownStats);
+  document.getElementById("regionStatsNavButton").classList.toggle("is-active", showRegionStats);
   document.getElementById("duplicatePhonesNavButton").classList.toggle("is-active", showDuplicatePhones);
 
-  if ((showRegistrants || showTownStats || showDuplicatePhones) && !registrantsLoaded) {
+  if (
+    (showRegistrants || showTownStats || showRegionStats || showDuplicatePhones) &&
+    !registrantsLoaded
+  ) {
     loadRegistrants();
   } else if (showTownStats) {
     renderTownStats();
+  } else if (showRegionStats) {
+    renderRegionStats();
   } else if (showDuplicatePhones) {
     renderDuplicatePhones();
   }
@@ -283,10 +300,12 @@ function showAdminSection(section) {
 async function loadRegistrants() {
   const loading = document.getElementById("registrantsLoading");
   const statsLoading = document.getElementById("townStatsLoading");
+  const regionStatsLoading = document.getElementById("regionStatsLoading");
   const duplicatesLoading = document.getElementById("duplicatePhonesLoading");
 
   loading.hidden = false;
   statsLoading.hidden = false;
+  regionStatsLoading.hidden = false;
   duplicatesLoading.hidden = false;
 
   try {
@@ -297,16 +316,19 @@ async function loadRegistrants() {
     visibleDuplicateGroupsCount = DUPLICATE_GROUPS_PAGE_SIZE;
     renderRegistrants();
     renderTownStats();
+    renderRegionStats();
     renderDuplicatePhones();
   } catch (error) {
     registrantsCache = {};
     renderRegistrants();
     renderTownStats();
+    renderRegionStats();
     renderDuplicatePhones();
     showToast("Unable to load registered donors: " + error.message, "error");
   } finally {
     loading.hidden = true;
     statsLoading.hidden = true;
+    regionStatsLoading.hidden = true;
     duplicatesLoading.hidden = true;
   }
 }
@@ -499,6 +521,7 @@ async function mergeDuplicatePhoneGroup(group, button) {
 
     renderRegistrants();
     renderTownStats();
+    renderRegionStats();
     renderDuplicatePhones();
 
     if (failedDeletes.length) {
@@ -644,6 +667,105 @@ function renderTownStatsSummary(stats) {
     (topTown?.total || 0) + " registered";
 
   const bloodSummary = document.getElementById("bloodTypeSummary");
+  bloodSummary.innerHTML = "";
+
+  BLOOD_TYPES.forEach(type => {
+    const total = stats.reduce((sum, item) => sum + item.bloodTypes[type], 0);
+    const card = document.createElement("article");
+    card.innerHTML = `<span>${type}</span><strong>${total}</strong>`;
+    bloodSummary.appendChild(card);
+  });
+}
+
+function getRegionStatistics() {
+  const regions = new Map();
+
+  Object.values(registrantsCache).forEach(registrant => {
+    if (!registrant || typeof registrant !== "object") return;
+
+    const region =
+      String(registrant.Region || "Unknown region").trim() || "Unknown region";
+    const key = region.toLowerCase();
+
+    if (!regions.has(key)) {
+      regions.set(key, {
+        region,
+        total: 0,
+        bloodTypes: Object.fromEntries(BLOOD_TYPES.map(type => [type, 0]))
+      });
+    }
+
+    const item = regions.get(key);
+    const bloodType = String(registrant.BloodType || "").trim().toUpperCase();
+
+    item.total += 1;
+
+    if (Object.hasOwn(item.bloodTypes, bloodType)) {
+      item.bloodTypes[bloodType] += 1;
+    }
+  });
+
+  return Array.from(regions.values());
+}
+
+function getFilteredRegionStatistics() {
+  const search = document
+    .getElementById("regionStatsSearch")
+    .value.trim().toLowerCase();
+  const sort = document.getElementById("regionStatsSort").value;
+
+  return getRegionStatistics()
+    .filter(item => !search || item.region.toLowerCase().includes(search))
+    .sort((first, second) => {
+      if (sort === "region-asc") {
+        return first.region.localeCompare(second.region, undefined, {
+          sensitivity: "base"
+        });
+      }
+
+      return second.total - first.total ||
+        first.region.localeCompare(second.region, undefined, {
+          sensitivity: "base"
+        });
+    });
+}
+
+function renderRegionStats() {
+  const stats = getFilteredRegionStatistics();
+  const body = document.getElementById("regionStatsTableBody");
+  const empty = document.getElementById("regionStatsEmpty");
+  const tableWrap = document.getElementById("regionStatsTableWrap");
+
+  body.innerHTML = "";
+  empty.hidden = stats.length > 0;
+  tableWrap.hidden = stats.length === 0;
+
+  stats.forEach((item, index) => {
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td><strong>${escapeAdminHtml(item.region)}</strong></td>
+      <td><span class="admin-total-badge">${item.total}</span></td>
+      ${BLOOD_TYPES.map(type => `<td>${item.bloodTypes[type]}</td>`).join("")}
+    `;
+    body.appendChild(row);
+  });
+
+  renderRegionStatsSummary(stats);
+}
+
+function renderRegionStatsSummary(stats) {
+  const peopleTotal = stats.reduce((sum, item) => sum + item.total, 0);
+  const topRegion = [...stats].sort((a, b) => b.total - a.total)[0];
+
+  document.getElementById("regionStatsPeopleTotal").textContent = peopleTotal;
+  document.getElementById("regionStatsRegionsTotal").textContent = stats.length;
+  document.getElementById("regionStatsTopRegion").textContent =
+    topRegion?.region || "—";
+  document.getElementById("regionStatsTopRegionCount").textContent =
+    (topRegion?.total || 0) + " registered";
+
+  const bloodSummary = document.getElementById("regionBloodTypeSummary");
   bloodSummary.innerHTML = "";
 
   BLOOD_TYPES.forEach(type => {

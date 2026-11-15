@@ -89,6 +89,11 @@
           Town Statistics
         </button>
 
+        <button id="regionStatsNavButton" type="button" onclick="showAdminSection('regionStats')">
+          <span>🗺️</span>
+          Region Statistics
+        </button>
+
         <button id="duplicatePhonesNavButton" type="button" onclick="showAdminSection('duplicatePhones')">
           <span>🔗</span>
           Duplicate Phones
@@ -341,6 +346,89 @@
             type="button">
             Show more | عرض المزيد
           </button>
+        </div>
+      </section>
+    </main>
+
+    <main id="regionStatsView" class="admin-main" hidden>
+      <header class="admin-topbar">
+        <div>
+          <span>My Blood Is Yours</span>
+          <h1>Region Statistics | إحصائيات المناطق</h1>
+          <p>Registration totals and blood-type distribution for every region.</p>
+        </div>
+      </header>
+
+      <section class="admin-summary-grid admin-region-summary">
+        <article>
+          <span>People</span>
+          <strong id="regionStatsPeopleTotal">0</strong>
+          <small>Total Registered</small>
+        </article>
+
+        <article>
+          <span>Regions</span>
+          <strong id="regionStatsRegionsTotal">0</strong>
+          <small>Regions With Registrations</small>
+        </article>
+
+        <article>
+          <span>Top Region</span>
+          <strong id="regionStatsTopRegion" class="admin-summary-name">—</strong>
+          <small id="regionStatsTopRegionCount">0 registered</small>
+        </article>
+      </section>
+
+      <section id="regionBloodTypeSummary" class="admin-blood-summary"></section>
+
+      <section class="admin-content-card">
+        <div class="admin-content-header">
+          <div>
+            <h2>Statistics by Region</h2>
+            <p>عدد المسجلين وتوزيع فئات الدم في كل منطقة</p>
+          </div>
+
+          <div class="admin-filter-row admin-stats-filters">
+            <input
+              id="regionStatsSearch"
+              type="search"
+              placeholder="Search region">
+
+            <select id="regionStatsSort">
+              <option value="total-desc">Most registered</option>
+              <option value="region-asc">Region A–Z</option>
+            </select>
+          </div>
+        </div>
+
+        <div id="regionStatsLoading" class="admin-loading" hidden>
+          Loading region statistics...
+        </div>
+
+        <div id="regionStatsEmpty" class="admin-empty" hidden>
+          <strong>No region statistics found.</strong>
+          <span>Try changing the search.</span>
+        </div>
+
+        <div id="regionStatsTableWrap" class="admin-table-wrap" hidden>
+          <table class="admin-registrants-table admin-region-stats-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Region</th>
+                <th>Total</th>
+                <th>A+</th>
+                <th>A-</th>
+                <th>B+</th>
+                <th>B-</th>
+                <th>AB+</th>
+                <th>AB-</th>
+                <th>O+</th>
+                <th>O-</th>
+              </tr>
+            </thead>
+            <tbody id="regionStatsTableBody"></tbody>
+          </table>
         </div>
       </section>
     </main>
